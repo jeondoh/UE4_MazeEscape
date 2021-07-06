@@ -13,3 +13,6 @@ Intermediate
 *.suo
 *.xcodeproj
 *.xcworkspace
+# Template MAPS Ignore
+Content/Elite_FractalDesert/Maps
+Content/Elite_FractalGlacier/Maps
