@@ -269,9 +269,27 @@ __pycache__/
 # tools/
 ### VisualStudio Patch ###
 build/
+# Map Build Data
+*_BuiltData.uasset
 
 # Template MAPS Ignore
 Content/Elite_FractalDesert/Maps
 Content/Elite_FractalGlacier/Maps
 Content/AncientTreasures/Maps
 Content/InfinityBladeWeapons/Maps
+Content/AnimalVarietyPack/Crow/Maps
+Content/AnimalVarietyPack/DeerStagAndDoe/Maps
+Content/AnimalVarietyPack/Fox/Maps
+Content/AnimalVarietyPack/Pig/Maps
+Content/AnimalVarietyPack/Wolf/Maps
+Content/IndustryPropsPack6/Maps
+Content/ModSci_Engineer/Maps
+Content/ModSci_EngiProps/Maps
+Content/ModSciInteriors/Maps
+Content/StarterBundle/ModularSci_Comm/Maps
+Content/StarterBundle/ModularSci_Int/Maps
+Content/StarterBundle/ModularScifiHallways/Maps
+Content/StarterBundle/ModularSciFiMats/Maps
+Content/StarterBundle/ModularScifiProps/Maps
+Content/StarterContent/Maps
+Content/VehicleVarietyPack/Maps
