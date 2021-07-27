@@ -32,13 +32,16 @@ public:
 private:
 	/**************************************************************************************************/
 	/** 캐릭터 카메라 **/
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera", meta = (AllowPrivateAccess=true))
 	class USpringArmComponent* CameraBoom;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera", meta = (AllowPrivateAccess=true))
 	class UCameraComponent* FollowCamera;
+	
 	/**************************************************************************************************/
 	/** 캐릭터 이동 **/
+	
 	// 좌우회전 (키보드 왼쪽/오른쪽 키)
 	float BaseTurnRate;
 	// 상하회전 (키보드 위/아래 키)
@@ -47,18 +50,35 @@ private:
 	void MoveForward(float Value);
 	// 좌우이동 (키보드 A/D 키)
 	void MoveRight(float Value);
-	/*
-	* Rate만큼 좌우회전
-	* @param Rate : 정규화된 비율 / Rate = 1 = 회전율 100%
-	*/
+	// Rate만큼 좌우회전 / Rate = 1 = 회전율 100%
 	void TurnAtRate(float Rate);
-	/*
-	* Rate만큼 상하회전
-	* @param Rate : 정규화된 비율 / Rate = 1 = 회전율 100%
-	*/
+	// Rate만큼 상하회전 / Rate = 1 = 회전율 100%
 	void LookUpAtRate(float Rate);
-	/**************************************************************************************************/
 	
+	/**************************************************************************************************/
+	/** 캐릭터 행동 **/
+
+	// 무기발사 (마우스 좌클릭)
+	void FireWeapon();
+
+	/**************************************************************************************************/
+	/** 효과 (사운드/파티클) **/
+
+	// 총소리 10개 랜덤 재생
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Sounds", meta = (AllowPrivateAccess=true))
+	class USoundCue* FireSound;
+
+	// 스켈레톤 > 무기 > BareelSocket 발사 효과
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
+	class UParticleSystem* MuzzleFlash;
+	
+	/**************************************************************************************************/
+	/** 애니메이션 **/
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Animate", meta = (AllowPrivateAccess=true))
+	class UAnimMontage* HipFireMontage;
+	
+	/**************************************************************************************************/
 	
 // Getter & Setter
 public:
