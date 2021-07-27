@@ -1,0 +1,38 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Animation/AnimInstance.h"
+#include "MazePlayerAnimInstance.generated.h"
+
+/**
+ * 
+ */
+UCLASS()
+class MAZEESCAPE_API UMazePlayerAnimInstance : public UAnimInstance
+{
+	GENERATED_BODY()
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void UpdateAnimationProperties(float DeltaTime);
+	
+	virtual void NativeInitializeAnimation() override;
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
+	class AMazePlayer* MazePlayer;
+
+	// 캐릭터 이동속도
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
+	float Speed;
+
+	// 캐릭터가 점프중인지 확인
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
+	bool bIsInAir;
+
+	// 캐릭터가 움직이고 있는지 확인
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
+	bool bIsAccelerating;
+};
