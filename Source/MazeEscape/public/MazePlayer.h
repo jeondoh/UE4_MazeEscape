@@ -61,6 +61,9 @@ private:
 	// 무기발사 (마우스 좌클릭)
 	void FireWeapon();
 
+	// 총알이 조준선(십자가) 방향으로 이동
+	void FireHitToCrossHair(FTransform SocketTransForm);
+
 	/**************************************************************************************************/
 	/** 효과 (사운드/파티클) **/
 
@@ -71,10 +74,19 @@ private:
 	// 스켈레톤 > 무기 > BareelSocket 발사 효과
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* MuzzleFlash;
+
+	// 총알 충돌시 효과
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
+	class UParticleSystem* ImpactParticle;
+
+	// 총알 발사 효과
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
+	class UParticleSystem* BeamParticles;
 	
 	/**************************************************************************************************/
 	/** 애니메이션 **/
 
+	// 총기 반동 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* HipFireMontage;
 	
