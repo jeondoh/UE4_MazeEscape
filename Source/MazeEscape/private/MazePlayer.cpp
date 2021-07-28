@@ -13,22 +13,20 @@
 #include "Sound/SoundCue.h"
 
 // Sets default values
-AMazePlayer::AMazePlayer() :
-	BaseTurnRate(45.f),
-	BaseLookUpRate(45.f),
-	bAiming(false),
-	CameraDefaultFOV(0.f), // beginPlay에서 재정의
-	CameraZoomedFOV(60.f)
+AMazePlayer::AMazePlayer()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
+	// 변수 초기화
+	InitalizedData();
+
 	// 카메라 세팅
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 300.f; // 캐릭터 뒤에서 지정한 거리로 따라옴
+	CameraBoom->TargetArmLength = 180.f; // 캐릭터 뒤에서 지정한 거리로 따라옴
 	CameraBoom->bUsePawnControlRotation = true; // Player 기준으로 회전설정
-	CameraBoom->SocketOffset = FVector(0.f, 50.f, 50.f);
+	CameraBoom->SocketOffset = FVector(0.f, 50.f, 70.f);
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
@@ -54,6 +52,7 @@ void AMazePlayer::BeginPlay()
 	if(FollowCamera)
 	{
 		CameraDefaultFOV = GetFollowCamera()->FieldOfView;
+		CameraCurrentFOV = CameraDefaultFOV;
 	}
 }
 
@@ -61,8 +60,22 @@ void AMazePlayer::BeginPlay()
 void AMazePlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+	// 에이밍 줌인/줌아웃
+	CameraInterpZoom(DeltaTime);
 }
+
+void AMazePlayer::InitalizedData()
+{
+	CameraDefaultFOV = 0.f; // beginPlay에서 재정의 / 에이밍하지 않을때 카메라 시야
+	CameraCurrentFOV = 0.f; // beginPlay에서 재정의 / 카메라 현재 위치
+	BaseTurnRate = 45.f; // 좌우회전 (키보드 왼쪽/오른쪽 키)
+	BaseLookUpRate = 45.f; // 상하회전 (키보드 위/아래 키)
+	CameraZoomedFOV = 35.f; // 에이밍 시 카메라 줌
+	ZoomInterpSpeed = 40.f; // 에이밍 확대/축소 Interp속도
+	bAiming = false; // 에이밍 줌 여부
+}
+
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -96,13 +109,24 @@ void AMazePlayer::LookUpAtRate(float Rate)
 void AMazePlayer::AimingButtonPressed()
 {
 	bAiming = true;
-	GetFollowCamera()->SetFieldOfView(CameraZoomedFOV);
 }
 
 void AMazePlayer::AimingButtonReleased()
 {
 	bAiming = false;
-	GetFollowCamera()->SetFieldOfView(CameraDefaultFOV);
+}
+
+void AMazePlayer::CameraInterpZoom(float DeltaTime)
+{
+	if(bAiming)
+	{	
+		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraZoomedFOV, DeltaTime, ZoomInterpSpeed);
+	}
+	else
+	{
+		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
+	}
+	GetFollowCamera()->SetFieldOfView(CameraCurrentFOV);
 }
 
 void AMazePlayer::FireWeapon()

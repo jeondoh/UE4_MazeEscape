@@ -38,13 +38,8 @@ void UMazePlayerAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		{
 			LastMovementOffsetYaw = MovementOffsetYaw;			
 		}
-		/*
-		FString OffsetMessage = FString::Printf(TEXT("Movement Offset : %f"), MovementOffsetYaw);
-		if(GEngine)
-		{
-		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, OffsetMessage);
-		}
-		*/
+
+		bAiming = MazePlayer->GetAiming(); // 에이밍 여부
 	}
 }
 

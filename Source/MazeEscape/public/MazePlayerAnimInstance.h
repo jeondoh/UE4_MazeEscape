@@ -14,13 +14,13 @@ class MAZEESCAPE_API UMazePlayerAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 
-	public:
+public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateAnimationProperties(float DeltaTime);
 	
 	virtual void NativeInitializeAnimation() override;
 
-	private:
+private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
 	class AMazePlayer* MazePlayer;
 
@@ -35,6 +35,10 @@ class MAZEESCAPE_API UMazePlayerAnimInstance : public UAnimInstance
 	// 캐릭터가 움직이고 있는지 확인
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
 	bool bIsAccelerating;
+
+	// 에이밍 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
+	bool bAiming;
 
 	// 오프셋 YAW > 에임위치 & 캐릭터이동좌표의 차이
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta=(AllowPrivateAccess=true))

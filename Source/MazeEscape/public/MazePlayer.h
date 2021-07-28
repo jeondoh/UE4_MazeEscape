@@ -30,6 +30,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+
+	// 변수 초기화
+	void InitalizedData();
+	
 	/**************************************************************************************************/
 	/** 캐릭터 카메라 **/
 	
@@ -58,22 +62,32 @@ private:
 	/**************************************************************************************************/
 	/** 캐릭터 무기 조준선(Crosshair) **/
 
-	// 에이밍시 카메라 시야
+	// 에이밍하지 않을때 카메라 시야
 	float CameraDefaultFOV;
 	
 	// 에이밍을 하고 있는지 여부
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat | Aim", meta = (AllowPrivateAccess=true))
 	bool bAiming;
 
-	// 카메라 줌(에이밍시)
+	// 에이밍 시 카메라 줌
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat | Aim", meta = (AllowPrivateAccess=true))
 	float CameraZoomedFOV;
+
+	// 카메라 현재 위치
+	float CameraCurrentFOV;
+
+	// 에이밍 확대/축소 Interp속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Aim", meta = (AllowPrivateAccess=true))
+	float ZoomInterpSpeed;
 
 	// 에이밍 (마우스 오른쪽 버튼 Press)
 	void AimingButtonPressed();
 
 	// 에이밍 (마우스 오른쪽 버튼 No Press)
 	void AimingButtonReleased();
+
+	// 카메라 줌인/줌아웃 Interp 사용해 부드럽게 이동 (마우스 오른쪽 버튼)
+	void CameraInterpZoom(float DeltaTime);
 	
 	/**************************************************************************************************/
 	/** 캐릭터 행동 **/
@@ -82,7 +96,7 @@ private:
 	void FireWeapon();
 	// 총알이 조준선(십자가) 방향으로 이동
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
-
+	
 	/**************************************************************************************************/
 	/** 효과 (사운드/파티클) **/
 
@@ -112,4 +126,5 @@ private:
 public:
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const {return CameraBoom;}
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
+	FORCEINLINE bool GetAiming() const {return bAiming;}
 };
