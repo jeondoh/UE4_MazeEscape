@@ -15,39 +15,46 @@
 // Sets default values
 AMazePlayer::AMazePlayer() :
 	BaseTurnRate(45.f),
-	BaseLookUpRate(45.f)
+	BaseLookUpRate(45.f),
+	bAiming(false),
+	CameraDefaultFOV(0.f), // beginPlayì—ì„œ ì¬ì •ì˜
+	CameraZoomedFOV(60.f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
-	// Ä«¸Ş¶ó ¼¼ÆÃ
+	// ì¹´ë©”ë¼ ì„¸íŒ…
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 300.f; // Ä³¸¯ÅÍ µÚ¿¡¼­ ÁöÁ¤ÇÑ °Å¸®·Î µû¶ó¿È
-	CameraBoom->bUsePawnControlRotation = true; // Player ±âÁØÀ¸·Î È¸Àü¼³Á¤
+	CameraBoom->TargetArmLength = 300.f; // ìºë¦­í„° ë’¤ì—ì„œ ì§€ì •í•œ ê±°ë¦¬ë¡œ ë”°ë¼ì˜´
+	CameraBoom->bUsePawnControlRotation = true; // Player ê¸°ì¤€ìœ¼ë¡œ íšŒì „ì„¤ì •
 	CameraBoom->SocketOffset = FVector(0.f, 50.f, 50.f);
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	// ¸¶¿ì½º È¸Àü½Ã Ä³¸¯ÅÍ°¡ µû¶ó¿ÀÁö ¾Ê°Ô ¼³Á¤
+	// ë§ˆìš°ìŠ¤ íšŒì „ì‹œ ìºë¦­í„°ê°€ ë”°ë¼ì˜¤ì§€ ì•Šê²Œ ì„¤ì •
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
-	// Ä³¸¯ÅÍ ¿òÁ÷ÀÓ 
-	GetCharacterMovement()->bOrientRotationToMovement = false; // ÀÔ·ÂÇÏ´Â ¹æÇâÀ¸·Î Ä³¸¯ÅÍ ¿òÁ÷ÀÓ(ÀÌµ¿ ¹æÇâÀ¸·Î È¸Àü)
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f); // ÀÌµ¿¹æÇâÀ» Á¤ÇÒ¶§ È¸Àü¼Óµµ
-	GetCharacterMovement()->JumpZVelocity = 600.f; // Å©±â¸¸Å­ Á¡ÇÁ
-	GetCharacterMovement()->AirControl = 0.4f; // °ø±âÀúÇ×
-	
+	// ìºë¦­í„° ì›€ì§ì„ 
+	GetCharacterMovement()->bOrientRotationToMovement = false; // ì…ë ¥í•˜ëŠ” ë°©í–¥ìœ¼ë¡œ ìºë¦­í„° ì›€ì§ì„(ì´ë™ ë°©í–¥ìœ¼ë¡œ íšŒì „)
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f); // ì´ë™ë°©í–¥ì„ ì •í• ë•Œ íšŒì „ì†ë„
+	GetCharacterMovement()->JumpZVelocity = 600.f; // í¬ê¸°ë§Œí¼ ì í”„
+	GetCharacterMovement()->AirControl = 0.4f; // ê³µê¸°ì €í•­
 }
 
 // Called when the game starts or when spawned
 void AMazePlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(FollowCamera)
+	{
+		CameraDefaultFOV = GetFollowCamera()->FieldOfView;
+	}
 }
 
 // Called every frame
@@ -65,6 +72,8 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AMazePlayer::FireWeapon);
+	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &AMazePlayer::AimingButtonPressed);
+	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AMazePlayer::AimingButtonReleased);
 	
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMazePlayer::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMazePlayer::MoveRight);
@@ -84,6 +93,18 @@ void AMazePlayer::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
+void AMazePlayer::AimingButtonPressed()
+{
+	bAiming = true;
+	GetFollowCamera()->SetFieldOfView(CameraZoomedFOV);
+}
+
+void AMazePlayer::AimingButtonReleased()
+{
+	bAiming = false;
+	GetFollowCamera()->SetFieldOfView(CameraDefaultFOV);
+}
+
 void AMazePlayer::FireWeapon()
 {
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
@@ -94,30 +115,30 @@ void AMazePlayer::FireWeapon()
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransForm);
 		}
-		// ÃÑ¾Ë ¹ß»ç
+		// ì´ì•Œ ë°œì‚¬
 		FVector BeamEndPoint;
 		bool bBeamEnd = GetBeamEndLocation(SocketTransForm.GetLocation(), BeamEndPoint);
-		// ÆÄÆ¼Å¬ Àû¿ë
+		// íŒŒí‹°í´ ì ìš©
 		if(bBeamEnd)
 		{
-			// ÃÑ¾Ë ¹ß»ç »ç¿îµå
+			// ì´ì•Œ ë°œì‚¬ ì‚¬ìš´ë“œ
 			if(FireSound)
 			{
 				UGameplayStatics::PlaySound2D(this, FireSound);
 			}
-			// BeamEndPoint¿¡ ÃÑ¾Ë Ãæµ¹½Ã È¿°ú Àû¿ë
+			// BeamEndPointì— ì´ì•Œ ì¶©ëŒì‹œ íš¨ê³¼ ì ìš©
 			if(ImpactParticle)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, BeamEndPoint);
 			}
-			// ÃÑ¾Ë ¹ß»ç È¿°ú
+			// ì´ì•Œ ë°œì‚¬ íš¨ê³¼
 			if(BeamParticles)
 			{
-				// ÃÑ¾Ë ¹ß»ç ½ÃÀÛ°ú ³¡¿¡ BeamParticles(¿¬±â) È¿°ú »ı¼º
+				// ì´ì•Œ ë°œì‚¬ ì‹œì‘ê³¼ ëì— BeamParticles(ì—°ê¸°) íš¨ê³¼ ìƒì„±
 				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransForm.GetLocation());
 				if(Beam)
 				{
-					Beam->SetVectorParameter(FName("Target"), BeamEndPoint); // ÀÌ¹ÌÅÍ > Å¸°Ù > Å¸°ÙÀÌ¸§(Target)
+					Beam->SetVectorParameter(FName("Target"), BeamEndPoint); // ì´ë¯¸í„° > íƒ€ê²Ÿ > íƒ€ê²Ÿì´ë¦„(Target)
 				}
 			}			
 		} // end bBeamEnd
@@ -134,21 +155,21 @@ void AMazePlayer::FireWeapon()
 bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
 {
 	FVector2D ViewportSize;
-	// ºäÆ÷Æ® Å©±â¸¦ ¾ò±â À§ÇØ GEngine ÀÌ¿ë
+	// ë·°í¬íŠ¸ í¬ê¸°ë¥¼ ì–»ê¸° ìœ„í•´ GEngine ì´ìš©
 	if(GEngine && GEngine->GameViewport)
 	{
-		GEngine->GameViewport->GetViewportSize(ViewportSize); // FVector2D¿¡ È­¸é Å©±â·Î Ã¤¿ò
+		GEngine->GameViewport->GetViewportSize(ViewportSize); // FVector2Dì— í™”ë©´ í¬ê¸°ë¡œ ì±„ì›€
 	}
 
-	// ½ÊÀÚ¼± À§Ä¡ °¡Á®¿À±â
-	FVector2D CrossHairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // È­¸é Áß¾Ó À§Ä¡ ±¸ÇÏ±â
-	CrossHairLocation.Y -= 50.f; // ½ÊÀÚ¼± À§Ä¡ = ºí·çÇÁ¸°Æ®¿¡¼­ ¼³Á¤ÇÑ´ë·Î -50
+	// ì‹­ìì„  ìœ„ì¹˜ ê°€ì ¸ì˜¤ê¸°
+	FVector2D CrossHairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // í™”ë©´ ì¤‘ì•™ ìœ„ì¹˜ êµ¬í•˜ê¸°
+	CrossHairLocation.Y -= 50.f; // ì‹­ìì„  ìœ„ì¹˜ = ë¸”ë£¨í”„ë¦°íŠ¸ì—ì„œ ì„¤ì •í•œëŒ€ë¡œ -50
 
 	FVector CrossHairWorldPosition;
 	FVector CrossHairWorldDirection;
 
-	// DeprojectScreenToWorld = È­¸é°ø°£ À§Ä¡ FVector2D¸¦ world°ø°£ À§Ä¡ FVector·Î º¯È¯ÇØÁÜ CrossHairWorldPosition / CrossHairWorldDirection
-	// 2D È­¸é ÁÂÇ¥¸¦ 3D World °ø°£À¸·Î º¯È¯
+	// DeprojectScreenToWorld = í™”ë©´ê³µê°„ ìœ„ì¹˜ FVector2Dë¥¼ worldê³µê°„ ìœ„ì¹˜ FVectorë¡œ ë³€í™˜í•´ì¤Œ CrossHairWorldPosition / CrossHairWorldDirection
+	// 2D í™”ë©´ ì¢Œí‘œë¥¼ 3D World ê³µê°„ìœ¼ë¡œ ë³€í™˜
 	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
 		CrossHairLocation, CrossHairWorldPosition, CrossHairWorldDirection);
 
@@ -159,18 +180,20 @@ bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVecto
 		const FVector End{CrossHairWorldPosition + CrossHairWorldDirection * 50000.f};
 
 		OutBeamLocation = End;
-		
-		// Á÷¼±À» ÀÌ¿ëÇØ Ãæµ¹ ÆÇÁ¤(ÃÑ¾Ë ½ò¶§)
+
+		// 1ë²ˆì§¸ ë¼ì¸ ì¶”ì  : crosshairì˜ World ìœ„ì¹˜ 
+		// ì§ì„ ì„ ì´ìš©í•´ ì¶©ëŒ íŒì •(ì´ì•Œ ì ë•Œ)
 		GetWorld()->LineTraceSingleByChannel(ScreenTraceHit, Start, End, ECollisionChannel::ECC_Visibility);
 
-		// ÃÑ¾Ë Ãæµ¹½Ã
+		// ì´ì•Œ ì¶©ëŒì‹œ
 		if(ScreenTraceHit.bBlockingHit)
 		{
 			OutBeamLocation = ScreenTraceHit.Location;
 		}
 
-		// ¹°Ã¼°¡ ÃÑ±¸¿Í BeamEndPoint »çÀÌ¿¡ Á¸ÀçÇÒ¶§
-		// Á¶ÁØÇÑ°÷ »çÀÌ¿¡ ¹°Ã¼°¡ ÀÖÀ»¶§ EndPoint¸¦ º¯°æÇØÁØ´Ù.
+		// 2ë²ˆì§¸ ë¼ì¸ ì¶”ì  : ì´êµ¬ì™€ ëª©í‘œìœ„ì¹˜ ì‚¬ì´ì˜ ë¬¼ì²´ 
+		// ë¬¼ì²´ê°€ ì´êµ¬ì™€ BeamEndPoint ì‚¬ì´ì— ì¡´ì¬í• ë•Œ
+		// ì¡°ì¤€í•œê³³ ì‚¬ì´ì— ë¬¼ì²´ê°€ ìˆì„ë•Œ EndPointë¥¼ ë³€ê²½í•´ì¤€ë‹¤.
 		FHitResult WeaponTraceHit;
 		const FVector WeaponTraceStart{MuzzleSocketLocation};
 		const FVector WeaponTraceEnd{OutBeamLocation};

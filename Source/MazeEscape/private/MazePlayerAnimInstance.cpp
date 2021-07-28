@@ -15,25 +15,25 @@ void UMazePlayerAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	}
 	if(MazePlayer)
 	{
-		// Ä³¸¯ÅÍ ¼Óµµ
+		// ìºë¦­í„° ì†ë„
 		FVector Velocity{MazePlayer->GetVelocity()};
 		Velocity.Z = 0;
 		Speed = Velocity.Size();
 
-		// Ä³¸¯ÅÍ Á¡ÇÁ ¿©ºÎ
+		// ìºë¦­í„° ì í”„ ì—¬ë¶€
 		bIsInAir = MazePlayer->GetCharacterMovement()->IsFalling();
 
-		// Ä³¸¯ÅÍ ÀÌµ¿ ¿©ºÎ
+		// ìºë¦­í„° ì´ë™ ì—¬ë¶€
 		bIsAccelerating = false;
 		if(MazePlayer->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f)
 		{
 			bIsAccelerating = true;
 		}
 
-		FRotator AimRotation = MazePlayer->GetBaseAimRotation(); // ¿¡ÀÓ À§Ä¡
-		FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(MazePlayer->GetVelocity()); // Ä³¸¯ÅÍ ÀÌµ¿ XÁÂÇ¥
+		FRotator AimRotation = MazePlayer->GetBaseAimRotation(); // ì—ìž„ ìœ„ì¹˜
+		FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(MazePlayer->GetVelocity()); // ìºë¦­í„° ì´ë™ Xì¢Œí‘œ
 		MovementOffsetYaw = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
-		// Ä³¸¯ÅÍ ÀÌµ¿¼Óµµ°¡ 0ÀÏ¶§ ¾Ö´Ï¸ÞÀÌ¼Ç¿¡¼­ JogStopÀ» ¹Ù·Î È£ÃâÇÏ±â ¶§¹®¿¡ ¸Å²ô·´Áö ¸øÇÔ
+		// ìºë¦­í„° ì´ë™ì†ë„ê°€ 0ì¼ë•Œ ì• ë‹ˆë©”ì´ì…˜ì—ì„œ JogStopì„ ë°”ë¡œ í˜¸ì¶œí•˜ê¸° ë•Œë¬¸ì— ë§¤ë„ëŸ½ì§€ ëª»í•¨
 		if(MazePlayer->GetVelocity().Size() > 0.f)
 		{
 			LastMovementOffsetYaw = MovementOffsetYaw;			
@@ -42,7 +42,7 @@ void UMazePlayerAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		FString OffsetMessage = FString::Printf(TEXT("Movement Offset : %f"), MovementOffsetYaw);
 		if(GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, OffsetMessage);
+		GEngine->AddOnScreenDebugMessage(1, 0.f, FColor::White, OffsetMessage);
 		}
 		*/
 	}

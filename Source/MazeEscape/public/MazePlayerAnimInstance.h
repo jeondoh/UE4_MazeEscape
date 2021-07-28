@@ -7,40 +7,40 @@
 #include "MazePlayerAnimInstance.generated.h"
 
 /**
- * 
- */
+* 
+*/
 UCLASS()
 class MAZEESCAPE_API UMazePlayerAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 
-public:
+	public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateAnimationProperties(float DeltaTime);
 	
 	virtual void NativeInitializeAnimation() override;
 
-private:
+	private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
 	class AMazePlayer* MazePlayer;
 
-	// Ä³¸¯ÅÍ ÀÌµ¿¼Óµµ
+	// ìºë¦­í„° ì´ë™ì†ë„
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
 	float Speed;
 
-	// Ä³¸¯ÅÍ°¡ Á¡ÇÁÁßÀÎÁö È®ÀÎ
+	// ìºë¦­í„°ê°€ ì í”„ì¤‘ì¸ì§€ í™•ì¸
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
 	bool bIsInAir;
 
-	// Ä³¸¯ÅÍ°¡ ¿òÁ÷ÀÌ°í ÀÖ´ÂÁö È®ÀÎ
+	// ìºë¦­í„°ê°€ ì›€ì§ì´ê³  ìˆëŠ”ì§€ í™•ì¸
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
 	bool bIsAccelerating;
 
-	// ¿ÀÇÁ¼Â YAW > ¿¡ÀÓÀ§Ä¡ & Ä³¸¯ÅÍÀÌµ¿ÁÂÇ¥ÀÇ Â÷ÀÌ
+	// ì˜¤í”„ì…‹ YAW > ì—ì„ìœ„ì¹˜ & ìºë¦­í„°ì´ë™ì¢Œí‘œì˜ ì°¨ì´
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta=(AllowPrivateAccess=true))
 	float MovementOffsetYaw;
 
-	// Ä³¸¯ÅÍ ÀÌµ¿¼Óµµ°¡ 0ÀÌ ¾Æ´Ñ ¸¶Áö¸· ¿ÀÇÁ¼Â °ª ÀúÀå
+	// ìºë¦­í„° ì´ë™ì†ë„ê°€ 0ì´ ì•„ë‹Œ ë§ˆì§€ë§‰ ì˜¤í”„ì…‹ ê°’ ì €ì¥
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta=(AllowPrivateAccess=true))
 	float LastMovementOffsetYaw;
 };

@@ -12,7 +12,7 @@ class MAZEESCAPE_API AMazePlayer : public ACharacter
 {
 	GENERATED_BODY()
 	
-// º¯¼ö¼±¾ğ
+// ë³€ìˆ˜ì„ ì–¸
 public:
 	// Sets default values for this character's properties
 	AMazePlayer();
@@ -21,17 +21,17 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-// ÇÔ¼ö¼±¾ğ
+// í•¨ìˆ˜ì„ ì–¸
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// ÀÔ·Â Bind
+	// ì…ë ¥ Bind
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
 	/**************************************************************************************************/
-	/** Ä³¸¯ÅÍ Ä«¸Ş¶ó **/
+	/** ìºë¦­í„° ì¹´ë©”ë¼ **/
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera", meta = (AllowPrivateAccess=true))
 	class USpringArmComponent* CameraBoom;
@@ -40,49 +40,69 @@ private:
 	class UCameraComponent* FollowCamera;
 	
 	/**************************************************************************************************/
-	/** Ä³¸¯ÅÍ ÀÌµ¿ **/
+	/** ìºë¦­í„° ì´ë™ **/
 	
-	// ÁÂ¿ìÈ¸Àü (Å°º¸µå ¿ŞÂÊ/¿À¸¥ÂÊ Å°)
+	// ì¢Œìš°íšŒì „ (í‚¤ë³´ë“œ ì™¼ìª½/ì˜¤ë¥¸ìª½ í‚¤)
 	float BaseTurnRate;
-	// »óÇÏÈ¸Àü (Å°º¸µå À§/¾Æ·¡ Å°)
+	// ìƒí•˜íšŒì „ (í‚¤ë³´ë“œ ìœ„/ì•„ë˜ í‚¤)
 	float BaseLookUpRate; 
-	// ¾ÕµÚÀÌµ¿ (Å°º¸µå W/S Å°)
+	// ì•ë’¤ì´ë™ (í‚¤ë³´ë“œ W/S í‚¤)
 	void MoveForward(float Value);
-	// ÁÂ¿ìÀÌµ¿ (Å°º¸µå A/D Å°)
+	// ì¢Œìš°ì´ë™ (í‚¤ë³´ë“œ A/D í‚¤)
 	void MoveRight(float Value);
-	// Rate¸¸Å­ ÁÂ¿ìÈ¸Àü / Rate = 1 = È¸ÀüÀ² 100%
+	// Rateë§Œí¼ ì¢Œìš°íšŒì „ / Rate = 1 = íšŒì „ìœ¨ 100%
 	void TurnAtRate(float Rate);
-	// Rate¸¸Å­ »óÇÏÈ¸Àü / Rate = 1 = È¸ÀüÀ² 100%
+	// Rateë§Œí¼ ìƒí•˜íšŒì „ / Rate = 1 = íšŒì „ìœ¨ 100%
 	void LookUpAtRate(float Rate);
+
+	/**************************************************************************************************/
+	/** ìºë¦­í„° ë¬´ê¸° ì¡°ì¤€ì„ (Crosshair) **/
+
+	// ì—ì´ë°ì‹œ ì¹´ë©”ë¼ ì‹œì•¼
+	float CameraDefaultFOV;
+	
+	// ì—ì´ë°ì„ í•˜ê³  ìˆëŠ”ì§€ ì—¬ë¶€
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat | Aim", meta = (AllowPrivateAccess=true))
+	bool bAiming;
+
+	// ì¹´ë©”ë¼ ì¤Œ(ì—ì´ë°ì‹œ)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat | Aim", meta = (AllowPrivateAccess=true))
+	float CameraZoomedFOV;
+
+	// ì—ì´ë° (ë§ˆìš°ìŠ¤ ì˜¤ë¥¸ìª½ ë²„íŠ¼ Press)
+	void AimingButtonPressed();
+
+	// ì—ì´ë° (ë§ˆìš°ìŠ¤ ì˜¤ë¥¸ìª½ ë²„íŠ¼ No Press)
+	void AimingButtonReleased();
 	
 	/**************************************************************************************************/
-	/** Ä³¸¯ÅÍ Çàµ¿ **/
+	/** ìºë¦­í„° í–‰ë™ **/
 
-	// ¹«±â¹ß»ç (¸¶¿ì½º ÁÂÅ¬¸¯)
+	// ë¬´ê¸°ë°œì‚¬ (ë§ˆìš°ìŠ¤ ì¢Œí´ë¦­)
 	void FireWeapon();
-	// ÃÑ¾ËÀÌ Á¶ÁØ¼±(½ÊÀÚ°¡) ¹æÇâÀ¸·Î ÀÌµ¿
+	// ì´ì•Œì´ ì¡°ì¤€ì„ (ì‹­ìê°€) ë°©í–¥ìœ¼ë¡œ ì´ë™
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
 
 	/**************************************************************************************************/
-	/** È¿°ú (»ç¿îµå/ÆÄÆ¼Å¬) **/
+	/** íš¨ê³¼ (ì‚¬ìš´ë“œ/íŒŒí‹°í´) **/
 
-	// ÃÑ¼Ò¸® 10°³ ·£´ı Àç»ı
+	// ì´ì†Œë¦¬ 10ê°œ ëœë¤ ì¬ìƒ
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Sounds", meta = (AllowPrivateAccess=true))
 	class USoundCue* FireSound;
-	// ½ºÄÌ·¹Åæ > ¹«±â > BareelSocket ¹ß»ç È¿°ú
+	// ìŠ¤ì¼ˆë ˆí†¤ > ë¬´ê¸° > BareelSocket ë°œì‚¬ íš¨ê³¼
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* MuzzleFlash;
-	// ÃÑ¾Ë Ãæµ¹½Ã È¿°ú
+	// ì´ì•Œ ì¶©ëŒì‹œ íš¨ê³¼
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* ImpactParticle;
-	// ÃÑ¾Ë ¹ß»ç È¿°ú
+	// ì´ì•Œ ë°œì‚¬ íš¨ê³¼
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* BeamParticles;
 	
 	/**************************************************************************************************/
-	/** ¾Ö´Ï¸ŞÀÌ¼Ç **/
+	/** ì• ë‹ˆë©”ì´ì…˜ **/
 
-	// ÃÑ±â ¹İµ¿ ¸ùÅ¸ÁÖ
+	// ì´ê¸° ë°˜ë™ ëª½íƒ€ì£¼
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* HipFireMontage;
 	
