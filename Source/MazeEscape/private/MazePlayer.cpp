@@ -63,19 +63,49 @@ void AMazePlayer::Tick(float DeltaTime)
 
 	// 에이밍 줌인/줌아웃
 	CameraInterpZoom(DeltaTime);
+
+	// 에이밍 회전변수 설정
+	SetLookRate();
+
+	// Crosshair 계산
+	CalculateCrosshairSpread(DeltaTime);
 }
 
 void AMazePlayer::InitalizedData()
 {
+	/* 카메라시야 */
 	CameraDefaultFOV = 0.f; // beginPlay에서 재정의 / 에이밍하지 않을때 카메라 시야
 	CameraCurrentFOV = 0.f; // beginPlay에서 재정의 / 카메라 현재 위치
+	/* 이동 */
 	BaseTurnRate = 45.f; // 좌우회전 (키보드 왼쪽/오른쪽 키)
 	BaseLookUpRate = 45.f; // 상하회전 (키보드 위/아래 키)
+	/* 에이밍 */
 	CameraZoomedFOV = 35.f; // 에이밍 시 카메라 줌
 	ZoomInterpSpeed = 40.f; // 에이밍 확대/축소 Interp속도
 	bAiming = false; // 에이밍 줌 여부
+	HipTurnRate = 90.f; // 에이밍 하지 않을때 좌우회전
+	HipLookUpRate = 90.f; // 에이밍 하지 않을때 상하회전
+	AimingTurnRate = 20.f; // 에이밍시 좌우회전
+	AimingLookupRate = 20.f; // 에이밍시 상하회전
+	/* 에이밍 > 마우스 감도 */ 
+	MouseHipTurnRate = 1.0f; // 조준하지 않을때의 마우스 좌우 감도 
+    MouseHipLookUpRate = 1.0f; // 조준하지 않을때의 마우스 상하 감도 
+    MouseAimingTurnRate = 0.5f; // 조준할때의 마우스 좌우 감도 
+    MouseAimingLookUpRate = 0.5f; // 조준할때의 마우스 상하 감도
+	/* 조준선 */
+	CrosshairSpreadMultiplier = 0.f; // 조준선 속도
+	CrosshairVelocityFactor = 0.f; // 조준선 펼침
+	CrosshairInAirFactor = 0.f; // 점프시
+	CrosshairAimFactor = 0.f; // 조준시
+	CorsshairShootingFactor = 0.f; // 발사시
+	/* 사격 후 조준선 변경 */
+	ShootTimeDuration = 0.05f;
+	bFiringBullet = false;
+	/* 자동사격 */
+	bShouldFire = true;
+	bFireButtonPressed = false;
+	AutomaticFireRate = 0.2f;
 }
-
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -84,7 +114,8 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AMazePlayer::FireWeapon);
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AMazePlayer::FireButtonPressed);
+	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AMazePlayer::FireButtonReleased);
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &AMazePlayer::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AMazePlayer::AimingButtonReleased);
 	
@@ -92,8 +123,8 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMazePlayer::MoveRight);
 	PlayerInputComponent->BindAxis("TurnRate", this, &AMazePlayer::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AMazePlayer::LookUpAtRate);
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &AMazePlayer::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &AMazePlayer::LookUp);
 }
 
 void AMazePlayer::TurnAtRate(float Rate)
@@ -127,6 +158,63 @@ void AMazePlayer::CameraInterpZoom(float DeltaTime)
 		CameraCurrentFOV = FMath::FInterpTo(CameraCurrentFOV, CameraDefaultFOV, DeltaTime, ZoomInterpSpeed);
 	}
 	GetFollowCamera()->SetFieldOfView(CameraCurrentFOV);
+}
+
+void AMazePlayer::Turn(float Value)
+{
+	float TurnScaleFactor{bAiming ? MouseAimingTurnRate : MouseHipTurnRate};
+	AddControllerYawInput(Value * TurnScaleFactor);
+}
+
+void AMazePlayer::LookUp(float Value)
+{
+	float TurnScaleFactor{bAiming ? MouseAimingLookUpRate : MouseHipLookUpRate};
+	AddControllerPitchInput(Value * TurnScaleFactor);
+}
+
+void AMazePlayer::SetLookRate()
+{
+	BaseTurnRate = bAiming ? AimingTurnRate : HipTurnRate;
+	BaseLookUpRate = bAiming ? AimingLookupRate : HipLookUpRate;
+}
+
+void AMazePlayer::CalculateCrosshairSpread(float DeltaTime)
+{
+	FVector2D WalkSpeedRange{0.f, 600.f}; // 캐릭터 속도 범위 지정
+	FVector2D VelocityMultiplierRange{0.f, 1.f}; // 캐릭터 속도 범위 백분율
+	FVector Velocity{GetVelocity()};
+	Velocity.Z = 0.f;
+
+	// 캐릭터가 공중에 있을때 십자선 계산
+	// 공중에 있을때 조준선을 벌어지게
+	CrosshairInAirFactor = GetCharacterMovement()->IsFalling()
+		? FMath::FInterpTo(CrosshairInAirFactor, 2.25f, DeltaTime, 10.0f) // 점프할때 느리게 벌어짐
+		: FMath::FInterpTo(CrosshairInAirFactor, 0.f, DeltaTime, 30.f); // 착지할때 빠르게 줄어듬
+
+	// 에임 조준시(마우스 우클릭) 십자선 계산
+	// 조준시 십자선이 모이게
+	CrosshairAimFactor = bAiming
+		? FMath::FInterpTo(CrosshairAimFactor, 0.5f, DeltaTime, 30.f) // 조준시 조준선 좁게  
+		: FMath::FInterpTo(CrosshairAimFactor, 0.f, DeltaTime, 30.f); // 조준해제시 조준선 복구
+
+	// 사격 후 조준선 벌어지게
+	CorsshairShootingFactor = bFiringBullet
+		? FMath::FInterpTo(CorsshairShootingFactor, 0.3f, DeltaTime, 60.f) // 사격시 조준선 벌어지게
+		: FMath::FInterpTo(CorsshairShootingFactor, 0.f, DeltaTime, 60.f); // ShootTimeDuration 이후 조준선 복구
+	
+	CrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(WalkSpeedRange, VelocityMultiplierRange, Velocity.Size()); // 범위지정 -> 백분율
+	CrosshairSpreadMultiplier = 0.5f + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimFactor + CorsshairShootingFactor; // 0.5 ~ 1.5 사이의 값
+}
+
+void AMazePlayer::StartCrosshairBulletFire()
+{
+	bFiringBullet = true;
+	GetWorldTimerManager().SetTimer(CrosshairShootTimer, this, &AMazePlayer::FinishCrosshairBulletFire, ShootTimeDuration);
+}
+
+void AMazePlayer::FinishCrosshairBulletFire()
+{
+	bFiringBullet = false;
 }
 
 void AMazePlayer::FireWeapon()
@@ -174,6 +262,8 @@ void AMazePlayer::FireWeapon()
 		AnimInstance->Montage_Play(HipFireMontage);
 		AnimInstance->Montage_JumpToSection(FName("StartFire"));
 	}
+	// 조준선
+	StartCrosshairBulletFire();
 }
 
 bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
@@ -187,7 +277,7 @@ bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVecto
 
 	// 십자선 위치 가져오기
 	FVector2D CrossHairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // 화면 중앙 위치 구하기
-	CrossHairLocation.Y -= 50.f; // 십자선 위치 = 블루프린트에서 설정한대로 -50
+	// CrossHairLocation.Y -= 50.f; // 십자선 위치 = 블루프린트에서 설정한대로 -50
 
 	FVector CrossHairWorldPosition;
 	FVector CrossHairWorldDirection;
@@ -229,6 +319,36 @@ bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVecto
 		return true;
 	}
 	return false;
+}
+
+void AMazePlayer::FireButtonPressed()
+{
+	bFireButtonPressed = true;
+	StartFireTimer();
+}
+
+void AMazePlayer::FireButtonReleased()
+{
+	bFireButtonPressed = false;
+}
+
+void AMazePlayer::StartFireTimer()
+{
+	if(bShouldFire)
+	{
+		FireWeapon();
+		bShouldFire = false;
+		GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMazePlayer::AutoFireReset, AutomaticFireRate);
+	}
+}
+
+void AMazePlayer::AutoFireReset()
+{
+	bShouldFire = true;
+	if(bFireButtonPressed)
+	{
+		StartFireTimer();
+	}
 }
 
 void AMazePlayer::MoveForward(float Value)
