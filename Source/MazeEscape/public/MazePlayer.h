@@ -60,9 +60,8 @@ private:
 
 	// 무기발사 (마우스 좌클릭)
 	void FireWeapon();
-
 	// 총알이 조준선(십자가) 방향으로 이동
-	void FireHitToCrossHair(FTransform SocketTransForm);
+	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
 
 	/**************************************************************************************************/
 	/** 효과 (사운드/파티클) **/
@@ -70,15 +69,12 @@ private:
 	// 총소리 10개 랜덤 재생
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Sounds", meta = (AllowPrivateAccess=true))
 	class USoundCue* FireSound;
-
 	// 스켈레톤 > 무기 > BareelSocket 발사 효과
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* MuzzleFlash;
-
 	// 총알 충돌시 효과
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* ImpactParticle;
-
 	// 총알 발사 효과
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat | Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* BeamParticles;

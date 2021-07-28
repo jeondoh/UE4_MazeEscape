@@ -86,10 +86,6 @@ void AMazePlayer::LookUpAtRate(float Rate)
 
 void AMazePlayer::FireWeapon()
 {
-	if(FireSound)
-	{
-		UGameplayStatics::PlaySound2D(this, FireSound);
-	}
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
 	if(BarrelSocket)
 	{
@@ -99,11 +95,34 @@ void AMazePlayer::FireWeapon()
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransForm);
 		}
 		// 총알 발사
-		// 방법1
-		// FireHitLineTrace(SocketTransForm);
-		// 방법2
-		FireHitToCrossHair(SocketTransForm);
-	}
+		FVector BeamEndPoint;
+		bool bBeamEnd = GetBeamEndLocation(SocketTransForm.GetLocation(), BeamEndPoint);
+		// 파티클 적용
+		if(bBeamEnd)
+		{
+			// 총알 발사 사운드
+			if(FireSound)
+			{
+				UGameplayStatics::PlaySound2D(this, FireSound);
+			}
+			// BeamEndPoint에 총알 충돌시 효과 적용
+			if(ImpactParticle)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, BeamEndPoint);
+			}
+			// 총알 발사 효과
+			if(BeamParticles)
+			{
+				// 총알 발사 시작과 끝에 BeamParticles(연기) 효과 생성
+				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransForm.GetLocation());
+				if(Beam)
+				{
+					Beam->SetVectorParameter(FName("Target"), BeamEndPoint); // 이미터 > 타겟 > 타겟이름(Target)
+				}
+			}			
+		} // end bBeamEnd
+	} // end BarrelSocket
+	
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if(AnimInstance && HipFireMontage)
 	{
@@ -112,7 +131,7 @@ void AMazePlayer::FireWeapon()
 	}
 }
 
-void AMazePlayer::FireHitToCrossHair(FTransform SocketTransForm)
+bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
 {
 	FVector2D ViewportSize;
 	// 뷰포트 크기를 얻기 위해 GEngine 이용
@@ -120,6 +139,7 @@ void AMazePlayer::FireHitToCrossHair(FTransform SocketTransForm)
 	{
 		GEngine->GameViewport->GetViewportSize(ViewportSize); // FVector2D에 화면 크기로 채움
 	}
+
 	// 십자선 위치 가져오기
 	FVector2D CrossHairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // 화면 중앙 위치 구하기
 	CrossHairLocation.Y -= 50.f; // 십자선 위치 = 블루프린트에서 설정한대로 -50
@@ -137,29 +157,31 @@ void AMazePlayer::FireHitToCrossHair(FTransform SocketTransForm)
 		FHitResult ScreenTraceHit;
 		const FVector Start{CrossHairWorldPosition};
 		const FVector End{CrossHairWorldPosition + CrossHairWorldDirection * 50000.f};
-		FVector BeamEndPoint{End};
+
+		OutBeamLocation = End;
+		
 		// 직선을 이용해 충돌 판정(총알 쏠때)
 		GetWorld()->LineTraceSingleByChannel(ScreenTraceHit, Start, End, ECollisionChannel::ECC_Visibility);
 
 		// 총알 충돌시
 		if(ScreenTraceHit.bBlockingHit)
 		{
-			BeamEndPoint = ScreenTraceHit.Location;
-			if(ImpactParticle)
-			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, ScreenTraceHit.Location);
-			}
+			OutBeamLocation = ScreenTraceHit.Location;
 		}
-		if(BeamParticles)
+
+		// 물체가 총구와 BeamEndPoint 사이에 존재할때
+		// 조준한곳 사이에 물체가 있을때 EndPoint를 변경해준다.
+		FHitResult WeaponTraceHit;
+		const FVector WeaponTraceStart{MuzzleSocketLocation};
+		const FVector WeaponTraceEnd{OutBeamLocation};
+		GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
+		if(WeaponTraceHit.bBlockingHit)
 		{
-			// 총알 발사 시작과 끝에 BeamParticles(연기) 효과 생성
-			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransForm);
-			if(Beam)
-			{
-				Beam->SetVectorParameter(FName("Target"), BeamEndPoint); // 이미터 > 타겟 > 타겟이름(Target)
-			}
+			OutBeamLocation = WeaponTraceHit.Location;
 		}
+		return true;
 	}
+	return false;
 }
 
 void AMazePlayer::MoveForward(float Value)
