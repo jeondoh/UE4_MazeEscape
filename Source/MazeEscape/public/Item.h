@@ -19,6 +19,18 @@ enum class EItemRarity : uint8
 	
 	EIR_MAX UMETA(DisplayName = "DefaultMAX")
 };
+// 아이템 상태
+UENUM(BlueprintType)
+enum class EItemState : uint8
+{
+	EIS_Pickup UMETA(DisplayName = "Pickup"),
+	EIS_EquipInterping UMETA(DisplayName = "EquipInterping"),
+	EIS_PickedUp UMETA(DisplayName = "PickedUp"),
+	EIS_Equipped UMETA(DisplayName = "Equipped"),
+	EIS_Falling UMETA(DisplayName = "Falling"),
+	
+	EIS_MAX UMETA(DisplayName = "DefaultMAX")
+};
 
 UCLASS()
 class MAZEESCAPE_API AItem : public AActor
@@ -97,12 +109,26 @@ private:
 	// 등급별 ActiveStars배열 초기화
 	UFUNCTION()
 	void SetActiveStars(int8 Num);
+
+	/**************************************************************************************************/
+	/* 아이템 상태 */
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item|State", meta=(AllowPrivateAccess=true))
+	EItemState ItemState;
+
+	// 상태에 따라 아이템 속성
+	void SetItemProperties(EItemState State);
+	
+	/**************************************************************************************************/
 	
 // Getter & Setter
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const {return PickupWidget;}
 	FORCEINLINE USphereComponent* GetAreaSphere() const {return AreaSphere;}
 	FORCEINLINE UBoxComponent* GetCollisionBox() const {return CollisionBox;}
-	
+	FORCEINLINE EItemState GetItemState() const {return ItemState;}
+	void SetItemState(EItemState State);
+
+	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const {return ItemMesh;}
 
 };

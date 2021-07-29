@@ -184,10 +184,13 @@ private:
 	float AutomaticFireRate;
 	// 사격 사이 타이머 설정
 	FTimerHandle AutoFireTimer;
-	// 무기발사 (마우스 좌클릭)
-	void FireWeapon();
+	// Interaction key 상호작용 키
+	void InteractionBtnPressed();
+	void InteractionBtnRelease();
 	// 총알이 조준선(십자가) 방향으로 이동
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
+	// 무기발사 (마우스 좌클릭)
+	void FireWeapon();
 	// 사격
 	void FireButtonPressed();
 	// 비사격
@@ -258,6 +261,16 @@ private:
 
 	// 무기 장착
 	void EquipWeapon(AWeapon* WeaponToEquip);
+
+	// 무기 장착 해제 이후 땅에 떨어트림
+	void DropWeapon();
+
+	// 현재 장착된 무기 드롭 & 무기 장착
+	void SwapWeapon(AWeapon* WeaponToSwap);
+	
+	// TraceForItems(캐릭터와 겹치는 아이템 추적 함수) 에서 설정된 아이템 > Null이 될수도 있음 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat", meta=(AllowPrivateAccess=true))
+	AItem* TraceHitItem;
 	
 	/**************************************************************************************************/
 	

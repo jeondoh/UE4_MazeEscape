@@ -129,6 +129,8 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AMazePlayer::FireButtonReleased);
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &AMazePlayer::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AMazePlayer::AimingButtonReleased);
+	PlayerInputComponent->BindAction("Interaction", IE_Pressed, this, &AMazePlayer::InteractionBtnPressed);
+	PlayerInputComponent->BindAction("Interaction", IE_Released, this, &AMazePlayer::InteractionBtnRelease);
 	
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMazePlayer::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMazePlayer::MoveRight);
@@ -297,6 +299,20 @@ void AMazePlayer::FireWeapon()
 	StartCrosshairBulletFire();
 }
 
+void AMazePlayer::InteractionBtnPressed()
+{
+	if(TraceHitItem)
+	{
+		AWeapon* TraceHitWeapon = Cast<AWeapon>(TraceHitItem);
+		SwapWeapon(TraceHitWeapon);
+	}
+	
+}
+
+void AMazePlayer::InteractionBtnRelease()
+{
+}
+
 bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
 {
 	FHitResult CrosshairHitResult;
@@ -386,20 +402,20 @@ void AMazePlayer::TraceForItems()
 		TraceUnderCrosshairs(ItemTraceResult, OutHitLocation, 400.f);
 		if(ItemTraceResult.bBlockingHit)
 		{
-			AItem* HitItem = Cast<AItem>(ItemTraceResult.Actor);
-			if(HitItem && HitItem->GetPickupWidget())
+			TraceHitItem = Cast<AItem>(ItemTraceResult.Actor);
+			if(TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
-				HitItem->GetPickupWidget()->SetVisibility(true);
+				TraceHitItem->GetPickupWidget()->SetVisibility(true);
 			}			
 			if(TraceHitItemLastFrame)
 			{
 				// 다른 아이템일 경우
-				if(HitItem != TraceHitItemLastFrame)
+				if(TraceHitItem != TraceHitItemLastFrame)
 				{
 					TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
 				}
 			}
-			TraceHitItemLastFrame = HitItem;
+			TraceHitItemLastFrame = TraceHitItem;
 		}		
 	}
 	else if(TraceHitItemLastFrame)
@@ -422,9 +438,6 @@ void AMazePlayer::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if(WeaponToEquip)
 	{
-		// 모든 충돌 Ignore
-		WeaponToEquip->GetAreaSphere()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		WeaponToEquip->GetCollisionBox()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		// 스켈레톤 -> 소켓 가져옴
 		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
 		if(HandSocket)
@@ -433,7 +446,28 @@ void AMazePlayer::EquipWeapon(AWeapon* WeaponToEquip)
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
 		}
 		EquippedWeapon = WeaponToEquip;
+		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
 	}
+}
+
+void AMazePlayer::DropWeapon()
+{
+	if(EquippedWeapon)
+	{
+		// 착용하고 있는 무기가 있다면 무기 매쉬 분리
+		FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+		EquippedWeapon->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+		EquippedWeapon->SetItemState(EItemState::EIS_Falling);
+		EquippedWeapon->ThrowWeapon();
+	}
+}
+
+void AMazePlayer::SwapWeapon(AWeapon* WeaponToSwap)
+{
+	DropWeapon();
+	EquipWeapon(WeaponToSwap);
+	TraceHitItem = nullptr;
+	TraceHitItemLastFrame = nullptr;
 }
 
 void AMazePlayer::IncrementOverlappedItemCount(int8 Amount)

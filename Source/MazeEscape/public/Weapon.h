@@ -13,5 +13,32 @@ UCLASS()
 class MAZEESCAPE_API AWeapon : public AItem
 {
 	GENERATED_BODY()
+
+public:
+	AWeapon();
+
+	virtual void Tick(float DeltaSeconds) override;
+
+	// 무기 던지기
+	void ThrowWeapon();
+
+protected:
+	
+
+	
+private:
+
+	/**************************************************************************************************/
+	/* 무기 버리기 */
+	bool bFalling;
+	float ThrowWeaponTime;
+	FTimerHandle ThrowWeaponTimer;
+	
+	void StopFalling();
+
+	/**************************************************************************************************/
+	
+// Getter & Setter	
+public:
 	
 };
