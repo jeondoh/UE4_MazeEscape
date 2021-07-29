@@ -169,6 +169,8 @@ private:
 	// Timer 이후 조준선 복구
 	UFUNCTION()
 	void FinishCrosshairBulletFire();
+	// 뷰포트 크기 & 조준선 위치
+	void GetViewPortCrossHair(FVector2D& ViewportSize, FVector& CrossHairWorldPosition, FVector& CrossHairWorldDirection, bool& bScreenToWorld);
 	
 	/**************************************************************************************************/
 	/** 캐릭터 행동 **/
@@ -217,6 +219,27 @@ private:
 	// 총기 반동 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* HipFireMontage;
+
+	/**************************************************************************************************/
+	/** 위젯  **/
+
+	// 조준선으로 겨냥할때 뷰포트가 활성화 되게 설정
+	// Item 클래스의 collisionbox & 조준선 LineTrace를 이용해 충돌 처리
+	bool TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation);
+
+	// 캐릭터와 겹치는 아이템 추적
+	void TraceForItems();
+
+	/**************************************************************************************************/
+	/** 아이템  **/
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Items", meta = (AllowPrivateAccess=true))
+	class AItem* TraceHitItemLastFrame;
+	
+	// 아이템 추적
+	bool bShouldTraceForItems;
+	// 오버랩되는 아이템 개수
+	int8 OverlappedItemCount;
 	
 	/**************************************************************************************************/
 	
@@ -228,4 +251,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCrosshairSpreadMultiplier() const {return CrosshairSpreadMultiplier;}
+
+	FORCEINLINE int8 GetOverlappedItemCount() const {return OverlappedItemCount;}
+	// 오버랩되는 아이템 개수 계산 
+	// 오버랩시 아이템 위젯 창 팝업
+	void IncrementOverlappedItemCount(int8 Amount);
 };

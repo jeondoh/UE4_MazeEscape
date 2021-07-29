@@ -4,7 +4,9 @@
 #include "MazePlayer.h"
 
 #include "DrawDebugHelpers.h"
+#include "Item.h"
 #include "Camera/CameraComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -69,6 +71,9 @@ void AMazePlayer::Tick(float DeltaTime)
 
 	// Crosshair 계산
 	CalculateCrosshairSpread(DeltaTime);
+
+	// 캐릭터와 겹치는 아이템 추적
+	TraceForItems();
 }
 
 void AMazePlayer::InitalizedData()
@@ -105,6 +110,8 @@ void AMazePlayer::InitalizedData()
 	bShouldFire = true;
 	bFireButtonPressed = false;
 	AutomaticFireRate = 0.2f;
+	/* 아이템 */
+	bShouldTraceForItems = false;
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -217,6 +224,24 @@ void AMazePlayer::FinishCrosshairBulletFire()
 	bFiringBullet = false;
 }
 
+void AMazePlayer::GetViewPortCrossHair(FVector2D& ViewportSize, FVector& CrossHairWorldPosition, FVector& CrossHairWorldDirection, bool& bScreenToWorld)
+{
+	// 뷰포트 크기를 얻기 위해 GEngine 이용
+	if(GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize); // FVector2D에 화면 크기로 채움
+	}
+
+	// 십자선 위치 가져오기
+	FVector2D CrossHairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // 화면 중앙 위치 구하기
+	// CrossHairLocation.Y -= 50.f; // 십자선 위치 = 블루프린트에서 설정한대로 -50
+
+	// DeprojectScreenToWorld = 화면공간 위치 FVector2D를 world공간 위치 FVector로 변환해줌 CrossHairWorldPosition / CrossHairWorldDirection
+	// 2D 화면 좌표를 3D World 공간으로 변환
+	bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
+		CrossHairLocation, CrossHairWorldPosition, CrossHairWorldDirection);
+}
+
 void AMazePlayer::FireWeapon()
 {
 	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
@@ -230,29 +255,31 @@ void AMazePlayer::FireWeapon()
 		// 총알 발사
 		FVector BeamEndPoint;
 		bool bBeamEnd = GetBeamEndLocation(SocketTransForm.GetLocation(), BeamEndPoint);
-		// 파티클 적용
+
+		// 파티클 생성
+		// 총알 발사 사운드
+		if(FireSound)
+		{
+			UGameplayStatics::PlaySound2D(this, FireSound);
+		}
+		// 총알 발사 효과
+		if(BeamParticles)
+		{
+			// 총알 발사 시작과 끝에 BeamParticles(연기) 효과 생성
+			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransForm.GetLocation());
+			if(Beam)
+			{
+				Beam->SetVectorParameter(FName("Target"), BeamEndPoint); // 이미터 > 타겟 > 타겟이름(Target)
+			}
+		}
+		// 추적 성공시(물체가 있으면)
 		if(bBeamEnd)
 		{
-			// 총알 발사 사운드
-			if(FireSound)
-			{
-				UGameplayStatics::PlaySound2D(this, FireSound);
-			}
 			// BeamEndPoint에 총알 충돌시 효과 적용
 			if(ImpactParticle)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, BeamEndPoint);
 			}
-			// 총알 발사 효과
-			if(BeamParticles)
-			{
-				// 총알 발사 시작과 끝에 BeamParticles(연기) 효과 생성
-				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransForm.GetLocation());
-				if(Beam)
-				{
-					Beam->SetVectorParameter(FName("Target"), BeamEndPoint); // 이미터 > 타겟 > 타겟이름(Target)
-				}
-			}			
 		} // end bBeamEnd
 	} // end BarrelSocket
 	
@@ -268,54 +295,24 @@ void AMazePlayer::FireWeapon()
 
 bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
 {
-	FVector2D ViewportSize;
-	// 뷰포트 크기를 얻기 위해 GEngine 이용
-	if(GEngine && GEngine->GameViewport)
+	FHitResult CrosshairHitResult;
+	bool bCrosshairHit = TraceUnderCrosshairs(CrosshairHitResult, OutBeamLocation);
+
+	if(bCrosshairHit)
 	{
-		GEngine->GameViewport->GetViewportSize(ViewportSize); // FVector2D에 화면 크기로 채움
+		OutBeamLocation = CrosshairHitResult.Location;
 	}
-
-	// 십자선 위치 가져오기
-	FVector2D CrossHairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f); // 화면 중앙 위치 구하기
-	// CrossHairLocation.Y -= 50.f; // 십자선 위치 = 블루프린트에서 설정한대로 -50
-
-	FVector CrossHairWorldPosition;
-	FVector CrossHairWorldDirection;
-
-	// DeprojectScreenToWorld = 화면공간 위치 FVector2D를 world공간 위치 FVector로 변환해줌 CrossHairWorldPosition / CrossHairWorldDirection
-	// 2D 화면 좌표를 3D World 공간으로 변환
-	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
-		CrossHairLocation, CrossHairWorldPosition, CrossHairWorldDirection);
-
-	if(bScreenToWorld)
+	// 2번째 라인 추적 : 총구와 목표위치 사이의 물체 
+	// 물체가 총구와 BeamEndPoint 사이에 존재할때
+	// 조준한곳 사이에 물체가 있을때 EndPoint를 변경해준다.
+	FHitResult WeaponTraceHit;
+	const FVector WeaponTraceStart{MuzzleSocketLocation};
+	const FVector StartToEnd{OutBeamLocation - MuzzleSocketLocation};
+	const FVector WeaponTraceEnd{MuzzleSocketLocation + StartToEnd * 1.25f};
+	GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
+	if(WeaponTraceHit.bBlockingHit)
 	{
-		FHitResult ScreenTraceHit;
-		const FVector Start{CrossHairWorldPosition};
-		const FVector End{CrossHairWorldPosition + CrossHairWorldDirection * 50000.f};
-
-		OutBeamLocation = End;
-
-		// 1번째 라인 추적 : crosshair의 World 위치 
-		// 직선을 이용해 충돌 판정(총알 쏠때)
-		GetWorld()->LineTraceSingleByChannel(ScreenTraceHit, Start, End, ECollisionChannel::ECC_Visibility);
-
-		// 총알 충돌시
-		if(ScreenTraceHit.bBlockingHit)
-		{
-			OutBeamLocation = ScreenTraceHit.Location;
-		}
-
-		// 2번째 라인 추적 : 총구와 목표위치 사이의 물체 
-		// 물체가 총구와 BeamEndPoint 사이에 존재할때
-		// 조준한곳 사이에 물체가 있을때 EndPoint를 변경해준다.
-		FHitResult WeaponTraceHit;
-		const FVector WeaponTraceStart{MuzzleSocketLocation};
-		const FVector WeaponTraceEnd{OutBeamLocation};
-		GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
-		if(WeaponTraceHit.bBlockingHit)
-		{
-			OutBeamLocation = WeaponTraceHit.Location;
-		}
+		OutBeamLocation = WeaponTraceHit.Location;
 		return true;
 	}
 	return false;
@@ -349,6 +346,74 @@ void AMazePlayer::AutoFireReset()
 	{
 		StartFireTimer();
 	}
+}
+
+bool AMazePlayer::TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation)
+{
+	FVector2D ViewPortSize;
+	FVector CrossHairWorldPosition;
+	FVector CrossHairWorldDirection;
+	bool bScreenToWorld;
+	GetViewPortCrossHair(ViewPortSize, CrossHairWorldPosition, CrossHairWorldDirection, bScreenToWorld);
+
+	if(bScreenToWorld)
+	{
+		const FVector Start{CrossHairWorldPosition};
+		const FVector End{Start + CrossHairWorldDirection * 50000.f};
+		OutHitLocation = End;
+
+		GetWorld()->LineTraceSingleByChannel(OutHitReuslt, Start, End, ECollisionChannel::ECC_Visibility);
+		if(OutHitReuslt.bBlockingHit)
+		{
+			OutHitLocation = OutHitReuslt.Location;
+			return true;
+		}
+	}
+	return false;
+}
+
+void AMazePlayer::TraceForItems()
+{
+	if(bShouldTraceForItems)
+	{
+		// 무기에 에임을 대면 무기 위젯 활성화
+		FHitResult ItemTraceResult;
+		FVector OutHitLocation;
+		TraceUnderCrosshairs(ItemTraceResult, OutHitLocation);
+		if(ItemTraceResult.bBlockingHit)
+		{
+			AItem* HitItem = Cast<AItem>(ItemTraceResult.Actor);
+			if(HitItem && HitItem->GetPickupWidget())
+			{
+				HitItem->GetPickupWidget()->SetVisibility(true);
+			}			
+			if(TraceHitItemLastFrame)
+			{
+				// 다른 아이템일 경우
+				if(HitItem != TraceHitItemLastFrame)
+				{
+					TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+				}
+			}
+			TraceHitItemLastFrame = HitItem;
+		}		
+	}
+	else if(TraceHitItemLastFrame)
+	{
+		TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+	}
+}
+
+void AMazePlayer::IncrementOverlappedItemCount(int8 Amount)
+{
+	if(OverlappedItemCount + Amount <= 0)
+	{
+		OverlappedItemCount = 0;
+		bShouldTraceForItems = false;
+		return;
+	}
+	OverlappedItemCount += Amount;
+	bShouldTraceForItems = true;
 }
 
 void AMazePlayer::MoveForward(float Value)
