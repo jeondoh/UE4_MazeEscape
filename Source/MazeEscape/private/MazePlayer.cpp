@@ -6,6 +6,8 @@
 #include "DrawDebugHelpers.h"
 #include "Item.h"
 #include "Camera/CameraComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -56,6 +58,8 @@ void AMazePlayer::BeginPlay()
 		CameraDefaultFOV = GetFollowCamera()->FieldOfView;
 		CameraCurrentFOV = CameraDefaultFOV;
 	}
+	// Default 무기 지정 Socket에 부착
+	EquipWeapon(SpawnDefaultWeapon());
 }
 
 // Called every frame
@@ -296,7 +300,7 @@ void AMazePlayer::FireWeapon()
 bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
 {
 	FHitResult CrosshairHitResult;
-	bool bCrosshairHit = TraceUnderCrosshairs(CrosshairHitResult, OutBeamLocation);
+	bool bCrosshairHit = TraceUnderCrosshairs(CrosshairHitResult, OutBeamLocation, 50000.f);
 
 	if(bCrosshairHit)
 	{
@@ -348,7 +352,7 @@ void AMazePlayer::AutoFireReset()
 	}
 }
 
-bool AMazePlayer::TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation)
+bool AMazePlayer::TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation, float Multiply)
 {
 	FVector2D ViewPortSize;
 	FVector CrossHairWorldPosition;
@@ -359,7 +363,7 @@ bool AMazePlayer::TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHit
 	if(bScreenToWorld)
 	{
 		const FVector Start{CrossHairWorldPosition};
-		const FVector End{Start + CrossHairWorldDirection * 50000.f};
+		const FVector End{Start + CrossHairWorldDirection * Multiply};
 		OutHitLocation = End;
 
 		GetWorld()->LineTraceSingleByChannel(OutHitReuslt, Start, End, ECollisionChannel::ECC_Visibility);
@@ -379,7 +383,7 @@ void AMazePlayer::TraceForItems()
 		// 무기에 에임을 대면 무기 위젯 활성화
 		FHitResult ItemTraceResult;
 		FVector OutHitLocation;
-		TraceUnderCrosshairs(ItemTraceResult, OutHitLocation);
+		TraceUnderCrosshairs(ItemTraceResult, OutHitLocation, 400.f);
 		if(ItemTraceResult.bBlockingHit)
 		{
 			AItem* HitItem = Cast<AItem>(ItemTraceResult.Actor);
@@ -401,6 +405,34 @@ void AMazePlayer::TraceForItems()
 	else if(TraceHitItemLastFrame)
 	{
 		TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+	}
+}
+
+AWeapon* AMazePlayer::SpawnDefaultWeapon()
+{
+	if(DefaultWeaponClass)
+	{
+		// 무기 스폰
+		return GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);
+	}
+	return nullptr;
+}
+
+void AMazePlayer::EquipWeapon(AWeapon* WeaponToEquip)
+{
+	if(WeaponToEquip)
+	{
+		// 모든 충돌 Ignore
+		WeaponToEquip->GetAreaSphere()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		WeaponToEquip->GetCollisionBox()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		// 스켈레톤 -> 소켓 가져옴
+		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+		if(HandSocket)
+		{
+			// 해당 소켓에 무기 부착
+			HandSocket->AttachActor(WeaponToEquip, GetMesh());
+		}
+		EquippedWeapon = WeaponToEquip;
 	}
 }
 

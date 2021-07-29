@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Weapon.h"
 #include "GameFramework/Character.h"
 #include "MazePlayer.generated.h"
 
@@ -225,7 +226,7 @@ private:
 
 	// 조준선으로 겨냥할때 뷰포트가 활성화 되게 설정
 	// Item 클래스의 collisionbox & 조준선 LineTrace를 이용해 충돌 처리
-	bool TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation);
+	bool TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation, float Multiply);
 
 	// 캐릭터와 겹치는 아이템 추적
 	void TraceForItems();
@@ -240,6 +241,23 @@ private:
 	bool bShouldTraceForItems;
 	// 오버랩되는 아이템 개수
 	int8 OverlappedItemCount;
+	
+	/**************************************************************************************************/
+	/** 무기 **/
+
+	// 블루프린트에서 기본 무기 지정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat", meta=(AllowPrivateAccess=true))
+	TSubclassOf<AWeapon> DefaultWeaponClass;
+	
+	// 장착된 무기
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat", meta=(AllowPrivateAccess=true))
+	AWeapon* EquippedWeapon;
+
+	// 기본무기 장착
+	AWeapon* SpawnDefaultWeapon();
+
+	// 무기 장착
+	void EquipWeapon(AWeapon* WeaponToEquip);
 	
 	/**************************************************************************************************/
 	

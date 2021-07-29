@@ -3,8 +3,22 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
+
+// 아이템 등급 ENUM
+UENUM(BlueprintType)
+enum class EItemRarity : uint8
+{
+	EIR_Damaged UMETA(DisplayName = "Damaged"),
+	EIR_Common UMETA(DisplayName = "Common"),
+	EIR_UnCommon UMETA(DisplayName = "UnCommon"),
+	EIR_Rare UMETA(DisplayName = "Rare"),
+	EIR_Legendary UMETA(DisplayName = "Legendary"),
+	
+	EIR_MAX UMETA(DisplayName = "DefaultMAX")
+};
 
 UCLASS()
 class MAZEESCAPE_API AItem : public AActor
@@ -32,6 +46,10 @@ protected:
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
+
+	// 변수 초기화
+	void InitalizedData();
+	
 	/**************************************************************************************************/
 	/** 컴포넌트 **/
 	
@@ -46,7 +64,7 @@ private:
 	// 아이템 위젯 범위 Collision
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item|Properties", meta=(AllowPrivateAccess=true))
 	class USphereComponent* AreaSphere;
-	
+
 	/**************************************************************************************************/
 	/** 위젯 **/
 
@@ -55,9 +73,36 @@ private:
 	class UWidgetComponent* PickupWidget;
 
 	/**************************************************************************************************/
+	/** 아이템 정보 **/
+
+	// 아이템 위젯 > 아이템명
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item|Info", meta=(AllowPrivateAccess=true))
+	FString ItemName;
+
+	// 탄약수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Item|Info", meta=(AllowPrivateAccess=true))
+	int32 ItemCount;
+
+	// 아이템 등급
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Item|Info", meta=(AllowPrivateAccess=true))
+	EItemRarity ItemRarity;
+
+	// 아이템 등급별 Star개수
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item|Info", meta=(AllowPrivateAccess=true))
+	TArray<bool> ActiveStars;
+
+	// 등급별 Star 세팅
+	void SetSwtichStars();
+
+	// 등급별 ActiveStars배열 초기화
+	UFUNCTION()
+	void SetActiveStars(int8 Num);
 	
 // Getter & Setter
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const {return PickupWidget;}
+	FORCEINLINE USphereComponent* GetAreaSphere() const {return AreaSphere;}
+	FORCEINLINE UBoxComponent* GetCollisionBox() const {return CollisionBox;}
+	
 
 };
