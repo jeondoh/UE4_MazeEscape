@@ -58,6 +58,8 @@ void AMazePlayer::BeginPlay()
 	}
 	// Default 무기 지정 Socket에 부착
 	EquipWeapon(SpawnDefaultWeapon());
+	// TMAP 초기화
+	InitializeAmmoMap();
 }
 
 // Called every frame
@@ -117,6 +119,9 @@ void AMazePlayer::InitalizedData()
 	/* 아이템 획득 */
 	CameraInterpDistance = 150.f; // Inerp 대상에 대해 카메라에서 앞쪽으로 거리
 	CameraInterpElevation = 45.f; // Inerp 대상에 대해 카메라에서 위쪽으로 거리
+	/* 탄약 */
+	Starting9mmAmmo = 85;
+	StartingARAmmo = 120;
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -267,10 +272,14 @@ void AMazePlayer::GetViewPortCrossHair(FVector2D& ViewportSize, FVector& CrossHa
 
 void AMazePlayer::FireWeapon()
 {
-	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+	// 장착된 무기가 없다면
+	if(EquippedWeapon == nullptr) return;
+	// 조준선
+	StartCrosshairBulletFire();
+	const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
 	if(BarrelSocket)
 	{
-		const FTransform SocketTransForm = BarrelSocket->GetSocketTransform(GetMesh());
+		const FTransform SocketTransForm = BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh());
 		if(MuzzleFlash)
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransForm);
@@ -312,8 +321,11 @@ void AMazePlayer::FireWeapon()
 		AnimInstance->Montage_Play(HipFireMontage);
 		AnimInstance->Montage_JumpToSection(FName("StartFire"));
 	}
-	// 조준선
-	StartCrosshairBulletFire();
+	if(EquippedWeapon)
+	{
+		// 탄약수 감소
+		EquippedWeapon->DecrementAmmo();
+	}
 }
 
 void AMazePlayer::InteractionBtnPressed()
@@ -359,7 +371,10 @@ bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVecto
 void AMazePlayer::FireButtonPressed()
 {
 	bFireButtonPressed = true;
-	StartFireTimer();
+	if(WeaponHasAmmo())
+	{
+		StartFireTimer();
+	}
 }
 
 void AMazePlayer::FireButtonReleased()
@@ -379,10 +394,13 @@ void AMazePlayer::StartFireTimer()
 
 void AMazePlayer::AutoFireReset()
 {
-	bShouldFire = true;
-	if(bFireButtonPressed)
+	if(WeaponHasAmmo())
 	{
-		StartFireTimer();
+		bShouldFire = true;
+		if(bFireButtonPressed)
+		{
+			StartFireTimer();
+		}		
 	}
 }
 
@@ -486,6 +504,24 @@ void AMazePlayer::SwapWeapon(AWeapon* WeaponToSwap)
 	EquipWeapon(WeaponToSwap);
 	TraceHitItem = nullptr;
 	TraceHitItemLastFrame = nullptr;
+}
+
+void AMazePlayer::InitializeAmmoMap()
+{
+	AmmoMap.Add(EAmmoType::EAT_9mm, Starting9mmAmmo);
+	AmmoMap.Add(EAmmoType::EAT_AR, StartingARAmmo);
+}
+
+bool AMazePlayer::WeaponHasAmmo()
+{
+	if(EquippedWeapon == nullptr) return false;
+	if(EquippedWeapon->GetAmmo() > 0) return true;
+	// 총알없을때 사운드
+	if(EmptyBulletSound)
+	{
+		UGameplayStatics::PlaySound2D(this, EmptyBulletSound);
+	}
+	return false;
 }
 
 void AMazePlayer::IncrementOverlappedItemCount(int8 Amount)

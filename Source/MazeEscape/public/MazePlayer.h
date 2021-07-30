@@ -8,6 +8,15 @@
 #include "GameFramework/Character.h"
 #include "MazePlayer.generated.h"
 
+UENUM(BlueprintType)
+enum class EAmmoType : uint8
+{
+	EAT_9mm UMETA(DisplayName = "9mm"),
+	EAT_AR UMETA(DisplayName = "Assault Rifle"),
+	
+	EAT_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 UCLASS()
 class MAZEESCAPE_API AMazePlayer : public ACharacter
 {
@@ -292,7 +301,32 @@ private:
 	// TraceForItems(캐릭터와 겹치는 아이템 추적 함수) 에서 설정된 아이템 > Null이 될수도 있음 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat", meta=(AllowPrivateAccess=true))
 	AItem* TraceHitItem;
+
+	/**************************************************************************************************/
+	/** 탄약 **/
+
+	// 탄약 없을때 소리 재생
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo|Sounds", meta = (AllowPrivateAccess=true))
+	class USoundCue* EmptyBulletSound;
 	
+	// 탄약 저장 TMAP
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Items|Ammo", meta=(AllowPrivateAccess=true))
+	TMap<EAmmoType, int32> AmmoMap;
+
+	// 시작 9mm 탄약
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|Ammo", meta=(AllowPrivateAccess=true))
+	int32 Starting9mmAmmo;
+
+	// 시작 AR 탄약
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|Ammo", meta=(AllowPrivateAccess=true))
+	int32 StartingARAmmo;
+
+	// AmmoMap 초기화
+	void InitializeAmmoMap();
+
+	// 무기에 탄약이 있는지 확인
+	bool WeaponHasAmmo();
+		
 	/**************************************************************************************************/
 	
 // Getter & Setter

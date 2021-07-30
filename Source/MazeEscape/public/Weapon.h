@@ -21,13 +21,13 @@ public:
 
 	// 무기 던지기
 	void ThrowWeapon();
+	// 탄약 감소 (MazePlayer::FireWeapon)
+	void DecrementAmmo();
 
 protected:
-	
 
 	
 private:
-
 	/**************************************************************************************************/
 	/* 무기 버리기 */
 	bool bFalling;
@@ -37,8 +37,16 @@ private:
 	void StopFalling();
 
 	/**************************************************************************************************/
+	/* 탄약 */
+
+	/** 무기의 탄약수 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo", meta=(AllowPrivateAccess=true))
+	int32 Ammo;
+
+	/**************************************************************************************************/
 	
 // Getter & Setter	
 public:
+	FORCEINLINE int32 GetAmmo() const {return Ammo;}
 	
 };

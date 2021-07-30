@@ -3,6 +3,8 @@
 
 #include "Weapon.h"
 
+#include "Kismet/GameplayStatics.h"
+
 AWeapon::AWeapon()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -10,6 +12,7 @@ AWeapon::AWeapon()
 	
 	ThrowWeaponTime = 0.7f;
 	bFalling = false;
+	Ammo = 0;
 }
 
 void AWeapon::Tick(float DeltaSeconds)
@@ -42,6 +45,15 @@ void AWeapon::ThrowWeapon()
 
 	bFalling = true;
 	GetWorldTimerManager().SetTimer(ThrowWeaponTimer, this, &AWeapon::StopFalling, ThrowWeaponTime);
+}
+
+void AWeapon::DecrementAmmo()
+{
+	--Ammo;
+	if(Ammo<= 0)
+	{
+		Ammo = 0;
+	}
 }
 
 void AWeapon::StopFalling()
