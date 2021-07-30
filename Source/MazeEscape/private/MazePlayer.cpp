@@ -111,7 +111,7 @@ void AMazePlayer::InitalizedData()
 	ShootTimeDuration = 0.05f; // 사격후 시간
 	bFiringBullet = false; // 사격 여부
 	/* 자동사격 */
-	bShouldFire = true; // 총 발사 여부
+	// bShouldFire = true; // 총 발사 여부
 	bFireButtonPressed = false; // 왼쪽 마우스 클릭 여부
 	AutomaticFireRate = 0.2f; // 자동발사 사격속도(간격)
 	/* 아이템 */
@@ -120,8 +120,10 @@ void AMazePlayer::InitalizedData()
 	CameraInterpDistance = 150.f; // Inerp 대상에 대해 카메라에서 앞쪽으로 거리
 	CameraInterpElevation = 45.f; // Inerp 대상에 대해 카메라에서 위쪽으로 거리
 	/* 탄약 */
-	Starting9mmAmmo = 85;
-	StartingARAmmo = 120;
+	Starting9mmAmmo = 85; // 9mm 탄약개수
+	StartingARAmmo = 120; // AR 탄약개수
+	/* 전투상태 */
+	CombatState = ECombatState::ECS_Unoccupied;
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -274,8 +276,38 @@ void AMazePlayer::FireWeapon()
 {
 	// 장착된 무기가 없다면
 	if(EquippedWeapon == nullptr) return;
-	// 조준선
-	StartCrosshairBulletFire();
+	// 캐릭터 상태 확인
+	if(CombatState != ECombatState::ECS_Unoccupied) return;
+	// 탄약체크
+	if(WeaponHasAmmo())
+	{
+		// 조준선 표기
+		StartCrosshairBulletFire();
+		// 사격 사운드
+		PlayFireSound();
+		// 총알 발사 및 파티클
+		SendBullet();
+		// 사격 몽타주 애니메이션
+		PlayGunFireMontage();
+		// 탄약수 감소
+		EquippedWeapon->DecrementAmmo();
+		// 자동사격
+		StartFireTimer();
+	}
+}
+
+void AMazePlayer::PlayFireSound()
+{
+	// 총알 발사 사운드
+	if(FireSound)
+	{
+		UGameplayStatics::PlaySound2D(this, FireSound);
+	}
+}
+
+void AMazePlayer::SendBullet()
+{
+	// 소켓 확인 후 파티클 추가
 	const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
 	if(BarrelSocket)
 	{
@@ -287,13 +319,6 @@ void AMazePlayer::FireWeapon()
 		// 총알 발사
 		FVector BeamEndPoint;
 		bool bBeamEnd = GetBeamEndLocation(SocketTransForm.GetLocation(), BeamEndPoint);
-
-		// 파티클 생성
-		// 총알 발사 사운드
-		if(FireSound)
-		{
-			UGameplayStatics::PlaySound2D(this, FireSound);
-		}
 		// 총알 발사 효과
 		if(BeamParticles)
 		{
@@ -314,17 +339,15 @@ void AMazePlayer::FireWeapon()
 			}
 		} // end bBeamEnd
 	} // end BarrelSocket
-	
+}
+
+void AMazePlayer::PlayGunFireMontage()
+{
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if(AnimInstance && HipFireMontage)
 	{
 		AnimInstance->Montage_Play(HipFireMontage);
 		AnimInstance->Montage_JumpToSection(FName("StartFire"));
-	}
-	if(EquippedWeapon)
-	{
-		// 탄약수 감소
-		EquippedWeapon->DecrementAmmo();
 	}
 }
 
@@ -371,10 +394,7 @@ bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVecto
 void AMazePlayer::FireButtonPressed()
 {
 	bFireButtonPressed = true;
-	if(WeaponHasAmmo())
-	{
-		StartFireTimer();
-	}
+	FireWeapon();
 }
 
 void AMazePlayer::FireButtonReleased()
@@ -384,23 +404,24 @@ void AMazePlayer::FireButtonReleased()
 
 void AMazePlayer::StartFireTimer()
 {
-	if(bShouldFire)
-	{
-		FireWeapon();
-		bShouldFire = false;
-		GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMazePlayer::AutoFireReset, AutomaticFireRate);
-	}
+	CombatState = ECombatState::ECS_FireTimerInProgress;
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMazePlayer::AutoFireReset, AutomaticFireRate);
 }
 
 void AMazePlayer::AutoFireReset()
 {
+	CombatState = ECombatState::ECS_Unoccupied;
 	if(WeaponHasAmmo())
 	{
-		bShouldFire = true;
 		if(bFireButtonPressed)
 		{
-			StartFireTimer();
-		}		
+			FireWeapon();			
+		}
+	}
+	else
+	{
+		// 무기 재장전
+		
 	}
 }
 

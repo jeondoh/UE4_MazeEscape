@@ -17,6 +17,16 @@ enum class EAmmoType : uint8
 	EAT_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
+UENUM(BlueprintType)
+enum class ECombatState : uint8
+{
+	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
+	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
+	ECS_Reloading UMETA(DisplayName = "Reloading"),
+
+	ECS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 UCLASS()
 class MAZEESCAPE_API AMazePlayer : public ACharacter
 {
@@ -198,7 +208,7 @@ private:
 	// 왼쪽 마우스 클릭 여부
 	bool bFireButtonPressed;
 	// 총 발사 여부
-	bool bShouldFire;
+	// bool bShouldFire;
 	// 자동발사 사격속도(간격)
 	float AutomaticFireRate;
 	// 사격 사이 타이머 설정
@@ -208,8 +218,17 @@ private:
 	void InteractionBtnRelease();
 	// 총알이 조준선(십자가) 방향으로 이동
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
+	// 전투상태
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Stat|", meta=(AllowPrivateAccess=true))
+	ECombatState CombatState;
 	// 무기발사 (마우스 좌클릭)
 	void FireWeapon();
+	// 사격 소리
+	void PlayFireSound();
+	// 총알
+	void SendBullet();
+	// 사격 몽타주 애니메이션
+	void PlayGunFireMontage();
 	// 사격
 	void FireButtonPressed();
 	// 비사격
