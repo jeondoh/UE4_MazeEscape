@@ -120,6 +120,49 @@ private:
 	void SetItemProperties(EItemState State);
 	
 	/**************************************************************************************************/
+	/* 아이템 획득 */
+	
+	// 아이템 획득시 아이템 z위치
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	class UCurveFloat* ItemZCurve;
+
+	// Interp 시작위치
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	FVector ItemInterpStartLocation;
+
+	// 카메라 앞 interp 타겟 위치
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	FVector CameraTargetLocation;
+
+	// Interp 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	bool bInterping;
+
+	// interp 타이머
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	FTimerHandle ItemInerpTimer;
+
+	// 플레이어
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	class AMazePlayer* InterpPlayer;
+
+	// 엔진 -> 커브에셋 시간
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	float ZCurveTime;
+
+	void FinishInterping();
+
+	// EquipInterping 상태일때 커브를 이용한 아이템 획득
+	void ItemInterp(float DeltaTime);
+
+	float ItemInterpX;
+	float ItemInterpY;
+
+	float InterpInitalYawOffset;
+
+	// 커브 > 아이템 크기 조정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item|Interp", meta=(AllowPrivateAccess=true))
+	UCurveFloat* ItemScaleCurve;
 	
 // Getter & Setter
 public:
@@ -130,5 +173,7 @@ public:
 	void SetItemState(EItemState State);
 
 	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const {return ItemMesh;}
+
+	void StartItemCurve(AMazePlayer* SetPlayer);
 
 };

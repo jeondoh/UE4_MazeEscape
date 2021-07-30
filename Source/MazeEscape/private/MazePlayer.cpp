@@ -6,8 +6,6 @@
 #include "DrawDebugHelpers.h"
 #include "Item.h"
 #include "Camera/CameraComponent.h"
-#include "Components/BoxComponent.h"
-#include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -108,14 +106,17 @@ void AMazePlayer::InitalizedData()
 	CrosshairAimFactor = 0.f; // 조준시
 	CorsshairShootingFactor = 0.f; // 발사시
 	/* 사격 후 조준선 변경 */
-	ShootTimeDuration = 0.05f;
-	bFiringBullet = false;
+	ShootTimeDuration = 0.05f; // 사격후 시간
+	bFiringBullet = false; // 사격 여부
 	/* 자동사격 */
-	bShouldFire = true;
-	bFireButtonPressed = false;
-	AutomaticFireRate = 0.2f;
+	bShouldFire = true; // 총 발사 여부
+	bFireButtonPressed = false; // 왼쪽 마우스 클릭 여부
+	AutomaticFireRate = 0.2f; // 자동발사 사격속도(간격)
 	/* 아이템 */
-	bShouldTraceForItems = false;
+	bShouldTraceForItems = false; // 아이템 추적
+	/* 아이템 획득 */
+	CameraInterpDistance = 150.f; // Inerp 대상에 대해 카메라에서 앞쪽으로 거리
+	CameraInterpElevation = 45.f; // Inerp 대상에 대해 카메라에서 위쪽으로 거리
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -138,6 +139,22 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AMazePlayer::LookUpAtRate);
 	PlayerInputComponent->BindAxis("Turn", this, &AMazePlayer::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &AMazePlayer::LookUp);
+}
+
+FVector AMazePlayer::GetCameraInterpLocation()
+{
+	const FVector CameraWorldLocation{FollowCamera->GetComponentLocation()};
+	const FVector CameraForward{FollowCamera->GetForwardVector()};
+	return CameraWorldLocation + CameraForward * CameraInterpDistance + FVector(0.f, 0.f, CameraInterpElevation);
+}
+
+void AMazePlayer::GetPickupItem(AItem* Item)
+{
+	AWeapon* Weapon = Cast<AWeapon>(Item);
+	if(Weapon)
+	{
+		SwapWeapon(Weapon);
+	}	
 }
 
 void AMazePlayer::TurnAtRate(float Rate)
@@ -303,8 +320,9 @@ void AMazePlayer::InteractionBtnPressed()
 {
 	if(TraceHitItem)
 	{
-		AWeapon* TraceHitWeapon = Cast<AWeapon>(TraceHitItem);
-		SwapWeapon(TraceHitWeapon);
+		// AWeapon* TraceHitWeapon = Cast<AWeapon>(TraceHitItem);
+		// SwapWeapon(TraceHitWeapon);
+		TraceHitItem->StartItemCurve(this);
 	}
 	
 }

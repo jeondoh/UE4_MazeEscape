@@ -30,6 +30,16 @@ public:
 	// 입력 Bind
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	/**************************************************************************************************/
+	/** 아이템 획득 **/
+
+	// 아이템의 위치를 카메라 위치의 CameraInterpDistance만큼 앞으로, CameraInterpElevation만큼 위로 배치
+	FVector GetCameraInterpLocation();
+
+	void GetPickupItem(AItem* Item);
+	
+	/**************************************************************************************************/
+
 private:
 
 	// 변수 초기화
@@ -244,7 +254,18 @@ private:
 	bool bShouldTraceForItems;
 	// 오버랩되는 아이템 개수
 	int8 OverlappedItemCount;
-	
+
+	/**************************************************************************************************/
+	/** 아이템 획득 **/
+
+	// Inerp 대상에 대해 카메라에서 앞쪽으로 거리
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Items", meta=(AllowPrivateAccess=true))
+	float CameraInterpDistance;
+
+	// Inerp 대상에 대해 카메라에서 위쪽으로 거리
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Items", meta=(AllowPrivateAccess=true))
+	float CameraInterpElevation;
+
 	/**************************************************************************************************/
 	/** 무기 **/
 
