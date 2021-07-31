@@ -160,6 +160,11 @@ FVector AMazePlayer::GetCameraInterpLocation()
 
 void AMazePlayer::GetPickupItem(AItem* Item)
 {
+	// 무기 장착 소리
+	if(Item->GetEquipSound())
+	{
+		UGameplayStatics::PlaySound2D(this, Item->GetEquipSound());
+	}
 	AWeapon* Weapon = Cast<AWeapon>(Item);
 	if(Weapon)
 	{
@@ -358,9 +363,12 @@ void AMazePlayer::InteractionBtnPressed()
 {
 	if(TraceHitItem)
 	{
-		// AWeapon* TraceHitWeapon = Cast<AWeapon>(TraceHitItem);
-		// SwapWeapon(TraceHitWeapon);
 		TraceHitItem->StartItemCurve(this);
+		// 아이템 획득 사운드
+		if(TraceHitItem->GetPickupSound())
+		{
+			UGameplayStatics::PlaySound2D(this, TraceHitItem->GetPickupSound());
+		}
 	}
 	
 }
