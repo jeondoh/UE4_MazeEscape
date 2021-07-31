@@ -51,26 +51,34 @@ private:
 	/* 탄약 */
 
 	/** 무기의 탄약수 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
 	int32 Ammo;
 
 	// 탄창용량(빈탄창)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
 	int32 MagazineCapacity;
 	
 	// 탄약(ENUM)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
 	EAmmoType AmmoType;
+
+	// 리로드시 탄창 분리여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon|Properties", meta=(AllowPrivateAccess=true))
+	bool bMovingClip;
+
+	// 탄창명(총 고유 탄창명) / 스켈레톤 > 탄창(뼈) 이름
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Properties", meta=(AllowPrivateAccess=true))
+	FName ClipBoneName;
 
 	/**************************************************************************************************/
 	/* 무기 */
 	
 	// 무기 타입(ENUM)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
 	EWeaponType WeaponType;
 
 	// 리로드 몽타주 색션 이름
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
 	FName ReloadMontageSection;
 	
 // Getter & Setter	
@@ -80,4 +88,6 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EAmmoType GetAmmoType() const {return AmmoType;}
 	FORCEINLINE FName GetReloadMontageSection() const {return ReloadMontageSection;}
+	FORCEINLINE FName GetClipBoneName() const {return ClipBoneName;}
+	FORCEINLINE void SetClipBoneName(bool Move) {bMovingClip = Move;}
 };

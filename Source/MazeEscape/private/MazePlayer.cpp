@@ -44,6 +44,8 @@ AMazePlayer::AMazePlayer()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f); // 이동방향을 정할때 회전속도
 	GetCharacterMovement()->JumpZVelocity = 600.f; // 크기만큼 점프
 	GetCharacterMovement()->AirControl = 0.4f; // 공기저항
+	// 캐릭터 손 컴포넌트
+	HandSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("HandSceneComp"));
 }
 
 // Called when the game starts or when spawned
@@ -539,8 +541,10 @@ bool AMazePlayer::WeaponHasAmmo()
 	if(EquippedWeapon == nullptr) return false;
 	if(EquippedWeapon->GetAmmo() > 0) return true;
 	// 총알없을때 사운드
-	bool hasMagazine = EquippedWeapon->GetMagazineCapacity() == 0;
-	if(hasMagazine && EmptyBulletSound)
+	auto AmmoType = EquippedWeapon->GetAmmoType(); 
+	int32 CarriedAmmo = AmmoMap[AmmoType]; // 전체 총알 개수
+	bool hasAmmo = CarriedAmmo == 0;
+	if(hasAmmo && EmptyBulletSound)
 	{
 		UGameplayStatics::PlaySound2D(this, EmptyBulletSound);
 	}
@@ -549,13 +553,13 @@ bool AMazePlayer::WeaponHasAmmo()
 
 void AMazePlayer::ReloadButtonPressed()
 {
+	if(CombatState!=ECombatState::ECS_Unoccupied) return;
+	if(EquippedWeapon == nullptr) return;
 	ReloadWeapon();
 }
 
 void AMazePlayer::ReloadWeapon()
 {
-	if(CombatState!=ECombatState::ECS_Unoccupied) return;
-	if(EquippedWeapon == nullptr) return;
 	// 총기에 맞는 탄약 확인
 	if(CarryingAmo())
 	{
@@ -601,6 +605,28 @@ void AMazePlayer::FinishedReload()
 		}
 		AmmoMap.Add(AmmoType, CarriedAmmo);
 	}
+}
+
+void AMazePlayer::GrabClip()
+{
+	if(EquippedWeapon == nullptr) return;
+	if(HandSceneComponent == nullptr) return;
+	
+	// 탄창 Transform(위치, 회전, 스케일)
+	int32 ClipBoneIndex{EquippedWeapon->GetItemMesh()->GetBoneIndex(EquippedWeapon->GetClipBoneName())};
+	ClipTransfrom = EquippedWeapon->GetItemMesh()->GetBoneTransform(ClipBoneIndex);
+	// 손에 탄창 부착
+	// KeepRelative = 손에 탄창 오프셋 유지
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, true);
+	HandSceneComponent->AttachToComponent(GetMesh(), AttachmentRules, FName("Hand_l"));
+	HandSceneComponent->SetWorldTransform(ClipTransfrom);
+
+	EquippedWeapon->SetClipBoneName(true);
+}
+
+void AMazePlayer::ReleaseClip()
+{
+	EquippedWeapon->SetClipBoneName(false);	
 }
 
 bool AMazePlayer::CarryingAmo()

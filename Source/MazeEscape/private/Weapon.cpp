@@ -17,6 +17,7 @@ AWeapon::AWeapon()
 	WeaponType = EWeaponType::EWT_SubmachineGun;
 	AmmoType = EAmmoType::EAT_9mm;
 	ReloadMontageSection = FName(TEXT("Reload SMG"));
+	ClipBoneName = FName(TEXT("smg_clip"));
 }
 
 void AWeapon::Tick(float DeltaSeconds)
