@@ -6,16 +6,8 @@
 
 #include "Weapon.h"
 #include "GameFramework/Character.h"
+#include "AmmoType.h"
 #include "MazePlayer.generated.h"
-
-UENUM(BlueprintType)
-enum class EAmmoType : uint8
-{
-	EAT_9mm UMETA(DisplayName = "9mm"),
-	EAT_AR UMETA(DisplayName = "Assault Rifle"),
-	
-	EAT_MAX UMETA(DisplayName = "DefaultMAX")
-};
 
 UENUM(BlueprintType)
 enum class ECombatState : uint8
@@ -342,9 +334,22 @@ private:
 
 	// AmmoMap 초기화
 	void InitializeAmmoMap();
-
 	// 무기에 탄약이 있는지 확인
 	bool WeaponHasAmmo();
+	// 재장전 (키보드R키)
+	void ReloadButtonPressed();
+	// 재장전
+	void ReloadWeapon();
+	// 재장전 종료
+	UFUNCTION(BlueprintCallable)
+	void FinishedReload();
+
+	// 애니메이션 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
+	class UAnimMontage* ReloadMontage;
+
+	// 탄약 확인
+	bool CarryingAmo();
 		
 	/**************************************************************************************************/
 	

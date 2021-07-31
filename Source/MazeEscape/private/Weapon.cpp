@@ -12,7 +12,11 @@ AWeapon::AWeapon()
 	
 	ThrowWeaponTime = 0.7f;
 	bFalling = false;
-	Ammo = 0;
+	Ammo = 30;
+	MagazineCapacity = 30;
+	WeaponType = EWeaponType::EWT_SubmachineGun;
+	AmmoType = EAmmoType::EAT_9mm;
+	ReloadMontageSection = FName(TEXT("Reload SMG"));
 }
 
 void AWeapon::Tick(float DeltaSeconds)
@@ -49,15 +53,21 @@ void AWeapon::ThrowWeapon()
 
 void AWeapon::DecrementAmmo()
 {
-	--Ammo;
-	if(Ammo<= 0)
+	if(Ammo < 0)
 	{
 		Ammo = 0;
 	}
+	--Ammo;
 }
 
 void AWeapon::StopFalling()
 {
 	bFalling = false;
 	SetItemState(EItemState::EIS_Pickup);
+}
+
+void AWeapon::ReloadAmmo(int32 Amount)
+{
+	checkf(Ammo + Amount <= MagazineCapacity, TEXT("탄창용량에 초과된 탄약은 Reload 됩니다."));
+	Ammo += Amount;
 }

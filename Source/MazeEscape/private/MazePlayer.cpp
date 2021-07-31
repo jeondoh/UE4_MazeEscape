@@ -139,6 +139,7 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AMazePlayer::AimingButtonReleased);
 	PlayerInputComponent->BindAction("Interaction", IE_Pressed, this, &AMazePlayer::InteractionBtnPressed);
 	PlayerInputComponent->BindAction("Interaction", IE_Released, this, &AMazePlayer::InteractionBtnRelease);
+	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMazePlayer::ReloadButtonPressed);
 	
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMazePlayer::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMazePlayer::MoveRight);
@@ -421,7 +422,7 @@ void AMazePlayer::AutoFireReset()
 	else
 	{
 		// 무기 재장전
-		
+		ReloadWeapon();
 	}
 }
 
@@ -538,10 +539,80 @@ bool AMazePlayer::WeaponHasAmmo()
 	if(EquippedWeapon == nullptr) return false;
 	if(EquippedWeapon->GetAmmo() > 0) return true;
 	// 총알없을때 사운드
-	if(EmptyBulletSound)
+	bool hasMagazine = EquippedWeapon->GetMagazineCapacity() == 0;
+	if(hasMagazine && EmptyBulletSound)
 	{
 		UGameplayStatics::PlaySound2D(this, EmptyBulletSound);
 	}
+	return false;
+}
+
+void AMazePlayer::ReloadButtonPressed()
+{
+	ReloadWeapon();
+}
+
+void AMazePlayer::ReloadWeapon()
+{
+	if(CombatState!=ECombatState::ECS_Unoccupied) return;
+	if(EquippedWeapon == nullptr) return;
+	// 총기에 맞는 탄약 확인
+	if(CarryingAmo())
+	{
+		CombatState = ECombatState::ECS_Reloading;
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if(AnimInstance && ReloadMontage)
+		{
+			// 몽타주 실행
+			AnimInstance->Montage_Play(ReloadMontage);
+			AnimInstance->Montage_JumpToSection(EquippedWeapon->GetReloadMontageSection());
+		}
+	}
+	
+}
+
+void AMazePlayer::FinishedReload()
+{
+	// AmmoMap 업데이트
+	CombatState = ECombatState::ECS_Unoccupied;
+
+	if(EquippedWeapon == nullptr) return;
+
+	const auto AmmoType{EquippedWeapon->GetAmmoType()};
+	
+	if(AmmoMap.Contains(AmmoType))
+	{
+		// 캐릭터가 가지고 있는 탄약 수
+		int32 CarriedAmmo = AmmoMap[AmmoType];
+		// 탄창용량(빈탄창) - 탄약수 (탄창에 남은 공간)
+		const int32 MagEmptySpace = EquippedWeapon->GetMagazineCapacity() - EquippedWeapon->GetAmmo();
+		// 탄창에 남은 공간 > 가지고 있는 탄약 수
+		if(MagEmptySpace > CarriedAmmo)
+		{
+			// 가지고 있는 탄약 Reload
+			EquippedWeapon->ReloadAmmo(CarriedAmmo);
+			CarriedAmmo = 0;
+		}
+		else
+		{
+			// 탄챵 채우기
+			EquippedWeapon->ReloadAmmo(MagEmptySpace);
+			CarriedAmmo -= MagEmptySpace;
+		}
+		AmmoMap.Add(AmmoType, CarriedAmmo);
+	}
+}
+
+bool AMazePlayer::CarryingAmo()
+{
+	if(EquippedWeapon == nullptr) return false;
+
+	EAmmoType AmmoType = EquippedWeapon->GetAmmoType();
+	if(AmmoMap.Contains(AmmoType))
+	{
+		return AmmoMap[AmmoType] > 0;
+	}
+	
 	return false;
 }
 
