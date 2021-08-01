@@ -369,6 +369,7 @@ private:
 	
 // Getter & Setter
 public:
+	FORCEINLINE ECombatState GetCombatState() const {return CombatState;}
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const {return CameraBoom;}
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 	FORCEINLINE bool GetAiming() const {return bAiming;}

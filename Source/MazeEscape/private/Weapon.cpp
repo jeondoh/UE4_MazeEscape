@@ -67,6 +67,11 @@ void AWeapon::StopFalling()
 	SetItemState(EItemState::EIS_Pickup);
 }
 
+bool AWeapon::ClipIsFull()
+{
+	return Ammo >= MagazineCapacity;
+}
+
 void AWeapon::ReloadAmmo(int32 Amount)
 {
 	checkf(Ammo + Amount <= MagazineCapacity, TEXT("탄창용량에 초과된 탄약은 Reload 됩니다."));

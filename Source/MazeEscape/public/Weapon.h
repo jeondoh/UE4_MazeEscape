@@ -35,6 +35,8 @@ public:
 	void DecrementAmmo();
 	// 탄약 리로드
 	void ReloadAmmo(int32 Amount);
+	// 탄창용량확인
+	bool ClipIsFull();
 protected:
 
 	
@@ -69,7 +71,6 @@ private:
 	// 탄창명(총 고유 탄창명) / 스켈레톤 > 탄창(뼈) 이름
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Properties", meta=(AllowPrivateAccess=true))
 	FName ClipBoneName;
-
 	/**************************************************************************************************/
 	/* 무기 */
 	

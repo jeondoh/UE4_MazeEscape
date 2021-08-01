@@ -363,6 +363,7 @@ void AMazePlayer::InteractionBtnPressed()
 {
 	if(TraceHitItem)
 	{
+		// 아이템 Z커브
 		TraceHitItem->StartItemCurve(this);
 		// 아이템 획득 사운드
 		if(TraceHitItem->GetPickupSound())
@@ -569,7 +570,7 @@ void AMazePlayer::ReloadButtonPressed()
 void AMazePlayer::ReloadWeapon()
 {
 	// 총기에 맞는 탄약 확인
-	if(CarryingAmo())
+	if(CarryingAmo() && !EquippedWeapon->ClipIsFull())
 	{
 		CombatState = ECombatState::ECS_Reloading;
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();

@@ -62,6 +62,8 @@ void AItem::Tick(float DeltaTime)
 	// EquipInterping 상태일때 커브를 이용한 아이템 획득
 	ItemInterp(DeltaTime);
 
+	// 아이템 회전 (bRotate 여부에 따라)
+	ItemRotate(DeltaTime);
 }
 
 void AItem::InitalizedData()
@@ -77,6 +79,8 @@ void AItem::InitalizedData()
 	ItemInterpX = 0.f;
 	ItemInterpY = 0.f;
 	InterpInitalYawOffset = 0.f;
+	bRotate = false;
+	RotateSpeed = 40.f;
 }
 
 void AItem::SetSwtichStars()
@@ -115,6 +119,16 @@ void AItem::SetActiveStars(int8 Num)
 	for(int8 i = 1; i <= Num; i++)
 	{
 		ActiveStars[i] = true;
+	}
+}
+
+void AItem::ItemRotate(float DeltaTime)
+{
+	if(bRotate && ItemState == EItemState::EIS_Pickup)
+	{
+		FRotator NowRotation = GetActorRotation();
+		NowRotation.Yaw += DeltaTime * RotateSpeed;
+		SetActorRotation(NowRotation);
 	}
 }
 

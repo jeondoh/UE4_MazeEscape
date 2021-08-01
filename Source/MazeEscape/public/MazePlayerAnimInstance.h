@@ -6,6 +6,17 @@
 #include "Animation/AnimInstance.h"
 #include "MazePlayerAnimInstance.generated.h"
 
+UENUM(BlueprintType)
+enum class EOffsetState : uint8
+{
+	EOS_Aiming UMETA(DisplayName = "Aiming"),
+	EOS_Hip UMETA(DisplayName = "Hip"),
+	EOS_Reloading UMETA(DisplayName = "Reloading"),
+	EOS_InAir UMETA(DisplayName = "InAir"),
+
+	EOS_MAX UMETA(DisplayName = "DefaultMax"),
+};
+
 /**
 * 
 */
@@ -15,10 +26,18 @@ class MAZEESCAPE_API UMazePlayerAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 
 public:
+	UMazePlayerAnimInstance();
+	
 	UFUNCTION(BlueprintCallable)
 	void UpdateAnimationProperties(float DeltaTime);
 	
 	virtual void NativeInitializeAnimation() override;
+
+protected:
+	void TurnInPlace();
+
+	// 달리는 동안 기울이기에 대한 계산 처리
+	void Lean(float DeltaTime);
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
@@ -47,4 +66,43 @@ private:
 	// 캐릭터 이동속도가 0이 아닌 마지막 오프셋 값 저장
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Movement", meta=(AllowPrivateAccess=true))
 	float LastMovementOffsetYaw;
+
+	// 현재 프레임의 캐릭터의 Yaw 값 / 정지 상태 & 공중상태이지 않을때 업데이트
+	float TIPCharacterYaw;
+ 
+	//이전 프레임의 캐릭터의 Yaw 값 / 정지 상태 & 공중상태이지 않을때 업데이트 
+	float TIPCharacterYawLastFrame;
+
+	// 현재 프레임의 캐릭터 Rotation값 / 정지 상태에서만 업데이트
+	FRotator CharacterRotation;
+
+	// 이전 프레임의 캐릭터 Rotation값 / 정지 상태에서만 업데이트
+	FRotator CharacterRotationLastFrame;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Lean", meta=(AllowPrivateAccess=true))
+	float YawDelta;
+
+	// 스켈레톤 > Root뼈 오프셋
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Sight", meta=(AllowPrivateAccess=true))
+	float RootYawOffset;
+
+	// 현재 프레임의 Curve값
+	float RotationCurve;
+
+	// 이전 프레임의 Curve값
+	float RotationCurveLastFrame;
+
+	// 조준위치의 Pitch값
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Sight", meta=(AllowPrivateAccess=true))
+	float Pitch;	
+
+	// 재장전여부(재장전 동안 오프셋 방지)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Sight", meta=(AllowPrivateAccess=true))	
+	bool bReloading;
+
+	// 오프셋 상태
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="State", meta=(AllowPrivateAccess=true))
+	EOffsetState OffsetState;
+
+	void SetEOffsetState();
 };

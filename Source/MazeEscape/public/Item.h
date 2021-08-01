@@ -116,6 +116,15 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Items|State", meta=(AllowPrivateAccess=true))
 	EItemState ItemState;
 
+	// 아이템 회전 효과
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|State", meta=(AllowPrivateAccess=true))
+	bool bRotate;
+	// 아이템 회전 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|State", meta=(AllowPrivateAccess=true))
+	float RotateSpeed;
+
+	void ItemRotate(float DeltaTime);
+
 	// 상태에 따라 아이템 속성
 	void SetItemProperties(EItemState State);
 	
