@@ -6,6 +6,7 @@
 #include "DrawDebugHelpers.h"
 #include "Item.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -62,6 +63,8 @@ void AMazePlayer::BeginPlay()
 	EquipWeapon(SpawnDefaultWeapon());
 	// TMAP 초기화
 	InitializeAmmoMap();
+	// 캐릭터 이동속도
+	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 }
 
 // Called every frame
@@ -80,20 +83,33 @@ void AMazePlayer::Tick(float DeltaTime)
 
 	// 캐릭터와 겹치는 아이템 추적
 	TraceForItems();
+
+	// 웅크리기/서있기의 캡슐 컴포넌트 크기 변화 Interp
+	InterpCapsuleHalfHeight(DeltaTime);
 }
 
 void AMazePlayer::InitalizedData()
 {
+	/* 캐릭터 상태 */
+	CurrentCapsuleHalfHeight = 300.f; // 캡슐 컴포넌트 높이 > 현재 크기
+	StandingCapsuleHalfHeight = 88.f; // 캡슐 컴포넌트 높이 > 서있을때 크기
+	CrouchingCapsuleHalfHeight = 44.f; // 캡슐 컴포넌트 높이 > 웅크릴때 크기
+	CombatState = ECombatState::ECS_Unoccupied; // 전투 상태
+	BaseMovementSpeed = 650.f; // 평소 걸음속도
+	CrouchMovementSpeed = 300.f; // 웅크릴때의 걸음속도
+	BaseGroundFriction = 4.f; // 평소 바닥 마찰정도
+	CrouchGroundFriction = 100.f; // 웅크릴때의 바닥 마찰정도
 	/* 카메라시야 */
 	CameraDefaultFOV = 0.f; // beginPlay에서 재정의 / 에이밍하지 않을때 카메라 시야
 	CameraCurrentFOV = 0.f; // beginPlay에서 재정의 / 카메라 현재 위치
+	CameraZoomedFOV = 30.f; // 에이밍 시 카메라 줌
 	/* 이동 */
 	BaseTurnRate = 45.f; // 좌우회전 (키보드 왼쪽/오른쪽 키)
 	BaseLookUpRate = 45.f; // 상하회전 (키보드 위/아래 키)
 	/* 에이밍 */
-	CameraZoomedFOV = 35.f; // 에이밍 시 카메라 줌
 	ZoomInterpSpeed = 40.f; // 에이밍 확대/축소 Interp속도
 	bAiming = false; // 에이밍 줌 여부
+	bAimingBUttonPressed = false; // 에이밍 줌 여부(내부함수에서 사용)
 	HipTurnRate = 90.f; // 에이밍 하지 않을때 좌우회전
 	HipLookUpRate = 90.f; // 에이밍 하지 않을때 상하회전
 	AimingTurnRate = 20.f; // 에이밍시 좌우회전
@@ -101,8 +117,8 @@ void AMazePlayer::InitalizedData()
 	/* 에이밍 > 마우스 감도 */ 
 	MouseHipTurnRate = 1.0f; // 조준하지 않을때의 마우스 좌우 감도 
     MouseHipLookUpRate = 1.0f; // 조준하지 않을때의 마우스 상하 감도 
-    MouseAimingTurnRate = 0.5f; // 조준할때의 마우스 좌우 감도 
-    MouseAimingLookUpRate = 0.5f; // 조준할때의 마우스 상하 감도
+    MouseAimingTurnRate = 0.6f; // 조준할때의 마우스 좌우 감도 
+    MouseAimingLookUpRate = 0.6f; // 조준할때의 마우스 상하 감도
 	/* 조준선 */
 	CrosshairSpreadMultiplier = 0.f; // 조준선 속도
 	CrosshairVelocityFactor = 0.f; // 조준선 펼침
@@ -124,8 +140,8 @@ void AMazePlayer::InitalizedData()
 	/* 탄약 */
 	Starting9mmAmmo = 85; // 9mm 탄약개수
 	StartingARAmmo = 120; // AR 탄약개수
-	/* 전투상태 */
-	CombatState = ECombatState::ECS_Unoccupied;
+	/* 애니메이션 */
+	bCrouching = false; // 웅크리기
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -133,7 +149,7 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMazePlayer::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AMazePlayer::FireButtonPressed);
 	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AMazePlayer::FireButtonReleased);
@@ -142,6 +158,7 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Interaction", IE_Pressed, this, &AMazePlayer::InteractionBtnPressed);
 	PlayerInputComponent->BindAction("Interaction", IE_Released, this, &AMazePlayer::InteractionBtnRelease);
 	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMazePlayer::ReloadButtonPressed);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMazePlayer::CrouchButtonPressed);
 	
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMazePlayer::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMazePlayer::MoveRight);
@@ -184,12 +201,17 @@ void AMazePlayer::LookUpAtRate(float Rate)
 
 void AMazePlayer::AimingButtonPressed()
 {
-	bAiming = true;
+	bAimingBUttonPressed = true;
+	if(CombatState != ECombatState::ECS_Reloading)
+	{
+		Aim();
+	}
 }
 
 void AMazePlayer::AimingButtonReleased()
 {
-	bAiming = false;
+	bAimingBUttonPressed = false;
+	StopAiming();
 }
 
 void AMazePlayer::CameraInterpZoom(float DeltaTime)
@@ -217,10 +239,37 @@ void AMazePlayer::LookUp(float Value)
 	AddControllerPitchInput(Value * TurnScaleFactor);
 }
 
+void AMazePlayer::Jump()
+{
+	if(bCrouching)
+	{
+		bCrouching = false;
+		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+		GetCharacterMovement()->GroundFriction = BaseGroundFriction;
+		return;
+	}
+	ACharacter::Jump();
+}
+
 void AMazePlayer::SetLookRate()
 {
 	BaseTurnRate = bAiming ? AimingTurnRate : HipTurnRate;
 	BaseLookUpRate = bAiming ? AimingLookupRate : HipLookUpRate;
+}
+
+void AMazePlayer::Aim()
+{
+	bAiming = true;
+	GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
+}
+
+void AMazePlayer::StopAiming()
+{
+	bAiming = false;
+	if(!bCrouching)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;		
+	}
 }
 
 void AMazePlayer::CalculateCrosshairSpread(float DeltaTime)
@@ -437,6 +486,24 @@ void AMazePlayer::AutoFireReset()
 	}
 }
 
+void AMazePlayer::CrouchButtonPressed()
+{
+	if(!GetCharacterMovement()->IsFalling())
+	{
+		bCrouching = !bCrouching;
+	}
+	if(bCrouching)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
+		GetCharacterMovement()->GroundFriction = CrouchGroundFriction;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+		GetCharacterMovement()->GroundFriction = BaseGroundFriction;
+	}
+}
+
 bool AMazePlayer::TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation, float Multiply)
 {
 	FVector2D ViewPortSize;
@@ -572,6 +639,10 @@ void AMazePlayer::ReloadWeapon()
 	// 총기에 맞는 탄약 확인
 	if(CarryingAmo() && !EquippedWeapon->ClipIsFull())
 	{
+		if(bAiming)
+		{
+			StopAiming();
+		}
 		CombatState = ECombatState::ECS_Reloading;
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if(AnimInstance && ReloadMontage)
@@ -589,6 +660,11 @@ void AMazePlayer::FinishedReload()
 	// AmmoMap 업데이트
 	CombatState = ECombatState::ECS_Unoccupied;
 
+	if(bAimingBUttonPressed)
+	{
+		Aim();
+	}
+	
 	if(EquippedWeapon == nullptr) return;
 
 	const auto AmmoType{EquippedWeapon->GetAmmoType()};
@@ -661,6 +737,19 @@ void AMazePlayer::IncrementOverlappedItemCount(int8 Amount)
 	}
 	OverlappedItemCount += Amount;
 	bShouldTraceForItems = true;
+}
+
+void AMazePlayer::InterpCapsuleHalfHeight(float DeltaTime)
+{
+	float TargetCapsuleHalfHeight{bCrouching ? CrouchingCapsuleHalfHeight : StandingCapsuleHalfHeight};
+	const float InterpHalfHeight{FMath::FInterpTo(GetCapsuleComponent()->GetScaledCapsuleHalfHeight(),
+		TargetCapsuleHalfHeight, DeltaTime, 20.f)};
+
+	const float DeltaCapsuleHalfHeight{InterpHalfHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight()};
+	const FVector MeshOffset{0.f, 0.f, -DeltaCapsuleHalfHeight};
+	GetMesh()->AddLocalOffset(MeshOffset);
+	
+	GetCapsuleComponent()->SetCapsuleHalfHeight(InterpHalfHeight);
 }
 
 void AMazePlayer::MoveForward(float Value)

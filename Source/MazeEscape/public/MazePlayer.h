@@ -55,6 +55,37 @@ private:
 
 	// 변수 초기화
 	void InitalizedData();
+
+	/**************************************************************************************************/
+	/** 캐릭터 상태 **/
+
+	// 전투상태
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="State|Combat", meta=(AllowPrivateAccess=true))
+	ECombatState CombatState;
+	// 캡슐 컴포넌트 높이 > 현재 크기
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Height", meta = (AllowPrivateAccess=true))
+	float CurrentCapsuleHalfHeight;
+	// 캡슐 컴포넌트 높이 > 서있을때 크기
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Height", meta = (AllowPrivateAccess=true))
+	float StandingCapsuleHalfHeight;
+	// 캡슐 컴포넌트 높이 > 웅크릴때 크기
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Height", meta = (AllowPrivateAccess=true))
+	float CrouchingCapsuleHalfHeight;
+	// 평소 걸음속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Speed", meta=(AllowPrivateAccess=true))
+	float BaseMovementSpeed;
+	// 웅크릴때의 걸음속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Speed", meta=(AllowPrivateAccess=true))
+	float CrouchMovementSpeed;
+	// 평소 바닥 마찰정도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Speed", meta=(AllowPrivateAccess=true))
+	float BaseGroundFriction;
+	// 웅크릴때의 바닥 마찰정도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Speed", meta=(AllowPrivateAccess=true))
+	float CrouchGroundFriction;
+
+	// 웅크리기/서있기의 캡슐 컴포넌트 크기 변화 Interp
+	void InterpCapsuleHalfHeight(float DeltaTime);
 	
 	/**************************************************************************************************/
 	/** 캐릭터 카메라 **/
@@ -64,7 +95,13 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera", meta = (AllowPrivateAccess=true))
 	class UCameraComponent* FollowCamera;
-	
+	// 에이밍하지 않을때 카메라 시야
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (AllowPrivateAccess=true))
+	float CameraDefaultFOV;
+	// 에이밍시 카메라 줌
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Camera", meta = (AllowPrivateAccess=true))
+	float CameraZoomedFOV;
+
 	/**************************************************************************************************/
 	/** 캐릭터 이동 **/
 	
@@ -84,102 +121,83 @@ private:
 	void Turn(float Value);
 	// 마우스 Y 움직임
 	void LookUp(float Value);
+	// 점프
+	virtual void Jump() override;
 
 	/**************************************************************************************************/
 	/** 무기 에이밍(마우스 우클릭) **/
 
-	// 에이밍하지 않을때 카메라 시야
-	float CameraDefaultFOV;
-	
 	// 에이밍을 하고 있는지 여부
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Aim", meta = (AllowPrivateAccess=true))
 	bool bAiming;
-
+	// 에이밍을 하고 있는지 여부(내부함수에서 이용)
+	bool bAimingBUttonPressed;
 	// 에이밍 하지 않을때 좌우회전
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim", meta = (AllowPrivateAccess=true))
 	float HipTurnRate;
-	
 	// 에이밍 하지 않을때 상하회전
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim", meta = (AllowPrivateAccess=true))
 	float HipLookUpRate;
-
 	// 에이밍시 좌우회전
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim", meta = (AllowPrivateAccess=true))
 	float AimingTurnRate;
-
 	// 에이밍시 상하회전
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim", meta = (AllowPrivateAccess=true))
 	float AimingLookupRate;
-	
-	// 에이밍시 카메라 줌
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Combat|Aim", meta = (AllowPrivateAccess=true))
-	float CameraZoomedFOV;
-
 	// 카메라 현재 위치
 	float CameraCurrentFOV;
-
 	// 에이밍 확대/축소 Interp속도
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Aim", meta = (AllowPrivateAccess=true))
 	float ZoomInterpSpeed;
-
 	// 조준하지 않을때의 마우스 좌우 감도
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim|Mouse",
 		meta = (AllowPrivateAccess=true), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float MouseHipTurnRate;
-
 	// 조준하지 않을때의 마우스 상하 감도
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim|Mouse",
 		meta = (AllowPrivateAccess=true) , meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float MouseHipLookUpRate;
-
 	// 조준할때의 마우스 좌우 감도
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim|Mouse",
 		meta = (AllowPrivateAccess=true) , meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float MouseAimingTurnRate;
-
 	// 조준할때의 마우스 상하 감도
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat|Aim|Mouse",
 		meta = (AllowPrivateAccess=true) , meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float MouseAimingLookUpRate;
-	
 	// 에이밍 (마우스 오른쪽 버튼 Press)
 	void AimingButtonPressed();
-
 	// 에이밍 (마우스 오른쪽 버튼 No Press)
 	void AimingButtonReleased();
-
 	// 카메라 줌인/줌아웃 Interp 사용해 부드럽게 이동 (마우스 오른쪽 버튼)
 	void CameraInterpZoom(float DeltaTime);
-
 	// 에이밍 회전 변수 변경
 	void SetLookRate();
+	// 에이밍
+	void Aim();
+	// 일반상태
+	void StopAiming();
 
 	/**************************************************************************************************/
 	/** 조준선(Crosshair) **/
 
 	// 조준선 속도
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Corsshairs", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Corsshairs", meta = (AllowPrivateAccess=true))
 	float CrosshairSpreadMultiplier;
-
 	// 조준선 펼침
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Corsshairs", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Corsshairs", meta = (AllowPrivateAccess=true))
 	float CrosshairVelocityFactor;
-
 	// 점프시
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Corsshairs", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Corsshairs", meta = (AllowPrivateAccess=true))
 	float CrosshairInAirFactor;
-
 	// 조준시
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Corsshairs", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Corsshairs", meta = (AllowPrivateAccess=true))
 	float CrosshairAimFactor;
-
 	// 사격시 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Corsshairs", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Corsshairs", meta = (AllowPrivateAccess=true))
 	float CorsshairShootingFactor;
-
 	// 조준선 계산
 	void CalculateCrosshairSpread(float DeltaTime);
-
 	// 사격후 시간
 	float ShootTimeDuration;
 	// 사격 여부
@@ -210,9 +228,6 @@ private:
 	void InteractionBtnRelease();
 	// 총알이 조준선(십자가) 방향으로 이동
 	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
-	// 전투상태
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Stat|", meta=(AllowPrivateAccess=true))
-	ECombatState CombatState;
 	// 무기발사 (마우스 좌클릭)
 	void FireWeapon();
 	// 사격 소리
@@ -253,6 +268,12 @@ private:
 	// 총기 반동 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* HipFireMontage;
+
+	// 웅크리기 여부 (키보드 C키)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
+	bool bCrouching;
+
+	void CrouchButtonPressed();
 
 	/**************************************************************************************************/
 	/** 위젯  **/
@@ -373,6 +394,8 @@ public:
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const {return CameraBoom;}
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 	FORCEINLINE bool GetAiming() const {return bAiming;}
+
+	FORCEINLINE bool GetCrouching() const {return bCrouching;}
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCrosshairSpreadMultiplier() const {return CrosshairSpreadMultiplier;}

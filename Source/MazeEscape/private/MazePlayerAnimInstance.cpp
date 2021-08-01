@@ -24,6 +24,8 @@ UMazePlayerAnimInstance::UMazePlayerAnimInstance()
 	OffsetState = EOffsetState::EOS_Hip;
 	CharacterRotation = FRotator(0.f);
 	CharacterRotationLastFrame = FRotator(0.f);
+	RecoilWeight = 0.f;
+	bTurningInPlace = false;
 }
 
 void UMazePlayerAnimInstance::UpdateAnimationProperties(float DeltaTime)
@@ -34,8 +36,8 @@ void UMazePlayerAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	}
 	if(MazePlayer)
 	{
-		// 재장전여부
-		bReloading = MazePlayer->GetCombatState() == ECombatState::ECS_Reloading;
+		// 캐릭터 상태
+		CharacterStateUpdate();
 		// 캐릭터 속도
 		FVector Velocity{MazePlayer->GetVelocity()};
 		Velocity.Z = 0;
@@ -101,6 +103,7 @@ void UMazePlayerAnimInstance::TurnInPlace()
 		const float Turning{ GetCurveValue(TEXT("Turning")) };
 		if (Turning > 0)
 		{
+			bTurningInPlace = true;
 			RotationCurveLastFrame = RotationCurve;
 			// 애니메이션 커브에서 추가한 Rotation값 가져옴
 			RotationCurve = GetCurveValue(TEXT("Rotation"));
@@ -116,8 +119,14 @@ void UMazePlayerAnimInstance::TurnInPlace()
 				RootYawOffset > 0.f ? RootYawOffset -= YawExcess : RootYawOffset += YawExcess;
 			}
 		}
-		if (GEngine) GEngine->AddOnScreenDebugMessage(1, -1, FColor::Cyan, FString::Printf(TEXT("RootYawOffset: %f"), RootYawOffset));
+		else
+		{
+			bTurningInPlace = false;
+		}
+		// if (GEngine) GEngine->AddOnScreenDebugMessage(1, -1, FColor::Cyan, FString::Printf(TEXT("RootYawOffset: %f"), RootYawOffset));
 	}
+	// 장전속도 & 총기반동 정도 적용
+	SetRecoilWeight();
 }
 
 void UMazePlayerAnimInstance::Lean(float DeltaTime)
@@ -127,13 +136,39 @@ void UMazePlayerAnimInstance::Lean(float DeltaTime)
 	CharacterRotation = MazePlayer->GetActorRotation();
 
 	const FRotator Delta{UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotation, CharacterRotationLastFrame)};
-	
+	// DeltaTime 크기가 작음 > 역으로 나누어 주어서 크기를 키움
 	const float Target{Delta.Yaw / DeltaTime};
 	const float Interp{FMath::FInterpTo(YawDelta, Target, DeltaTime, 6.f)};
 	// 범위지정 -90 ~ 90
 	YawDelta = FMath::Clamp(Interp, -90.f, 90.f);
 
-	if(GEngine) GEngine->AddOnScreenDebugMessage(2, -1, FColor::Green, FString::Printf(TEXT("DeltaYaw :: %f"), Delta.Yaw));
+	// if(GEngine) GEngine->AddOnScreenDebugMessage(2, -1, FColor::Green, FString::Printf(TEXT("DeltaYaw :: %f"), Delta.Yaw));
+}
+
+void UMazePlayerAnimInstance::CharacterStateUpdate()
+{
+	// 재장전여부
+	bReloading = MazePlayer->GetCombatState() == ECombatState::ECS_Reloading;
+	// 웅크리기 여부
+	bCrouching = MazePlayer->GetCrouching();
+}
+
+void UMazePlayerAnimInstance::SetRecoilWeight()
+{
+	if(bTurningInPlace)
+	{
+		RecoilWeight = bReloading ? 1.f : 0.1f;
+		return;
+	}
+	// 웅크리고 재장전 중일 경우
+	if(bCrouching)
+	{
+		RecoilWeight = bReloading ? 1.f : 0.1f;
+	}
+	else
+	{
+		RecoilWeight = bAiming || bReloading ? 1.f : 0.5f;
+	}
 }
 
 void UMazePlayerAnimInstance::SetEOffsetState()

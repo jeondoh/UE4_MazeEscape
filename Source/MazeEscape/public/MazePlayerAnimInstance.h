@@ -39,6 +39,11 @@ protected:
 	// 달리는 동안 기울이기에 대한 계산 처리
 	void Lean(float DeltaTime);
 
+	// 장전속도 & 총기반동 정도 적용
+	void SetRecoilWeight();
+
+	void SetEOffsetState();
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
 	class AMazePlayer* MazePlayer;
@@ -79,6 +84,8 @@ private:
 	// 이전 프레임의 캐릭터 Rotation값 / 정지 상태에서만 업데이트
 	FRotator CharacterRotationLastFrame;
 
+	void CharacterStateUpdate();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Lean", meta=(AllowPrivateAccess=true))
 	float YawDelta;
 
@@ -104,5 +111,16 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="State", meta=(AllowPrivateAccess=true))
 	EOffsetState OffsetState;
 
-	void SetEOffsetState();
+	// 웅크리기 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Crouching", meta=(AllowPrivateAccess=true))
+	bool bCrouching;
+
+	// 조준에 따라 총기반동 정도 조절
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat", meta=(AllowPrivateAccess=true))
+	float RecoilWeight;
+
+	// 캐릭터 회전여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat", meta=(AllowPrivateAccess=true))
+	bool bTurningInPlace;
+	
 };
