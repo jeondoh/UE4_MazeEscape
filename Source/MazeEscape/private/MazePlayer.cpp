@@ -3,6 +3,7 @@
 
 #include "MazePlayer.h"
 
+#include "Ammo.h"
 #include "DrawDebugHelpers.h"
 #include "Item.h"
 #include "Camera/CameraComponent.h"
@@ -135,8 +136,8 @@ void AMazePlayer::InitalizedData()
 	/* 아이템 */
 	bShouldTraceForItems = false; // 아이템 추적
 	/* 아이템 획득 */
-	CameraInterpDistance = 150.f; // Inerp 대상에 대해 카메라에서 앞쪽으로 거리
-	CameraInterpElevation = 45.f; // Inerp 대상에 대해 카메라에서 위쪽으로 거리
+	CameraInterpDistance = 100.f; // Inerp 대상에 대해 카메라에서 앞쪽으로 거리
+	CameraInterpElevation = 20.f; // Inerp 대상에 대해 카메라에서 위쪽으로 거리
 	/* 탄약 */
 	Starting9mmAmmo = 85; // 9mm 탄약개수
 	StartingARAmmo = 120; // AR 탄약개수
@@ -186,7 +187,12 @@ void AMazePlayer::GetPickupItem(AItem* Item)
 	if(Weapon)
 	{
 		SwapWeapon(Weapon);
-	}	
+	}
+	AAmmo* Ammo = Cast<AAmmo>(Item);
+	if(Ammo)
+	{
+		PickUpAmmo(Ammo);
+	}
 }
 
 void AMazePlayer::TurnAtRate(float Rate)
@@ -712,6 +718,27 @@ void AMazePlayer::GrabClip()
 void AMazePlayer::ReleaseClip()
 {
 	EquippedWeapon->SetClipBoneName(false);	
+}
+
+void AMazePlayer::PickUpAmmo(AAmmo* Ammo)
+{
+	if(AmmoMap.Find(Ammo->GetAmmoType()))
+	{
+		// 탄약수
+		int32 AmmoCount = AmmoMap[Ammo->GetAmmoType()];
+		AmmoCount += Ammo->GetItemCount();
+		AmmoMap[Ammo->GetAmmoType()] = AmmoCount;
+	}
+	// 총기와 탄약이 일치할때
+	if(EquippedWeapon->GetAmmoType() == Ammo->GetAmmoType())
+	{
+		// 탄약이 없을때 자동 리로드
+		if(EquippedWeapon->GetAmmo() == 0)
+		{
+			ReloadWeapon();
+		}
+	}
+	Ammo->Destroy();
 }
 
 bool AMazePlayer::CarryingAmo()

@@ -57,6 +57,9 @@ protected:
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	// 상태에 따라 아이템 속성(자식 클래스에서도 사용됨)
+	virtual void SetItemProperties(EItemState State);
+
 private:
 
 	// 변수 초기화
@@ -125,9 +128,6 @@ private:
 
 	void ItemRotate(float DeltaTime);
 
-	// 상태에 따라 아이템 속성
-	void SetItemProperties(EItemState State);
-	
 	/**************************************************************************************************/
 	/* 아이템 획득 */
 	
@@ -164,9 +164,6 @@ private:
 	// EquipInterping 상태일때 커브를 이용한 아이템 획득
 	void ItemInterp(float DeltaTime);
 
-	float ItemInterpX;
-	float ItemInterpY;
-
 	float InterpInitalYawOffset;
 
 	// 커브 > 아이템 크기 조정
@@ -193,6 +190,8 @@ public:
 	
 	FORCEINLINE USoundCue* GetPickupSound() const {return PickupSound;}
 	FORCEINLINE USoundCue* GetEquipSound() const {return EquipSound;}
+
+	FORCEINLINE int32 GetItemCount() const {return ItemCount;}
 
 	void StartItemCurve(AMazePlayer* SetPlayer);
 

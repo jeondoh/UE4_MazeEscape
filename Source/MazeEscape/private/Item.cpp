@@ -76,8 +76,6 @@ void AItem::InitalizedData()
 	ItemInterpStartLocation = FVector(0.f); // Interp 시작위치
 	CameraTargetLocation = FVector(0.f); // 카메라 앞 interp 타겟 위치
 	bInterping = false;
-	ItemInterpX = 0.f;
-	ItemInterpY = 0.f;
 	InterpInitalYawOffset = 0.f;
 	bRotate = false;
 	RotateSpeed = 40.f;

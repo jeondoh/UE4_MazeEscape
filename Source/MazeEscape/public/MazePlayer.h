@@ -273,6 +273,11 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	bool bCrouching;
 
+	// 탄약 Reload 애니메이션 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
+	class UAnimMontage* ReloadMontage;
+
+
 	void CrouchButtonPressed();
 
 	/**************************************************************************************************/
@@ -370,18 +375,13 @@ private:
 	// 애니메이션 Blueprint에서 호출됨 > GrabClip 노티파이
 	UFUNCTION(BlueprintCallable)
 	void ReleaseClip();
-
-	// 애니메이션 몽타주
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
-	class UAnimMontage* ReloadMontage;
-
+	// 탄약줍기
+	void PickUpAmmo(class AAmmo* Ammo);
 	// 탄약 확인
 	bool CarryingAmo();
-
 	// 탄창 Transform(위치, 회전, 스케일)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat", meta = (AllowPrivateAccess=true))
 	FTransform ClipTransfrom;
-
 	// Scene Component 재장전 중 캐릭터 손에 탄창 부착
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat", meta = (AllowPrivateAccess=true))
 	USceneComponent* HandSceneComponent;
