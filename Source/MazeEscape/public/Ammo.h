@@ -19,6 +19,9 @@ public:
 	AAmmo();
 
 	virtual void Tick(float DeltaTime) override;
+	/* 아이템 테두리 Glow 효과 파라메터 */
+	virtual void EnableCustomDepth() override;
+	virtual void DisableCustomDepth() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -55,7 +58,6 @@ private:
 	// 탄약 아이콘
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo|Widget", meta=(AllowPrivateAccess=true))
 	UTexture2D* AmmoIconTexture;
-	/**************************************************************************************************/
 	
 // Getter & Setter
 public:

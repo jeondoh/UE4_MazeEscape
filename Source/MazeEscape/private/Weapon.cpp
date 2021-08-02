@@ -65,6 +65,9 @@ void AWeapon::StopFalling()
 {
 	bFalling = false;
 	SetItemState(EItemState::EIS_Pickup);
+	EnableGlowMaterial();
+	// 타이머 경과 > 경과시간은 UpdatePulse에서 사용
+	StartPulseTimer();
 }
 
 bool AWeapon::ClipIsFull()

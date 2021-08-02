@@ -63,6 +63,9 @@ void AMazePlayer::BeginPlay()
 	}
 	// Default 무기 지정 Socket에 부착
 	EquipWeapon(SpawnDefaultWeapon());
+	// 아이템 테두리 GLow 효과
+	EquippedWeapon->DisableCustomDepth();
+	EquippedWeapon->DisableGlowMaterial();
 	// TMAP 초기화
 	InitializeAmmoMap();
 	// 캐릭터 이동속도
@@ -136,7 +139,7 @@ void AMazePlayer::InitalizedData()
 	AutomaticFireRate = 0.2f; // 자동발사 사격속도(간격)
 	/* 아이템 */
 	bShouldTraceForItems = false; // 아이템 추적
-	/* 탄약 */
+	/* 탄약 */	
 	Starting9mmAmmo = 85; // 9mm 탄약개수
 	StartingARAmmo = 120; // AR 탄약개수
 	/* 애니메이션 */
@@ -540,6 +543,7 @@ void AMazePlayer::TraceForItems()
 			if(TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
 				TraceHitItem->GetPickupWidget()->SetVisibility(true);
+				TraceHitItem->EnableCustomDepth();
 			}			
 			if(TraceHitItemLastFrame)
 			{
@@ -547,6 +551,7 @@ void AMazePlayer::TraceForItems()
 				if(TraceHitItem != TraceHitItemLastFrame)
 				{
 					TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+					TraceHitItemLastFrame->DisableCustomDepth();
 				}
 			}
 			TraceHitItemLastFrame = TraceHitItem;
@@ -555,6 +560,7 @@ void AMazePlayer::TraceForItems()
 	else if(TraceHitItemLastFrame)
 	{
 		TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+		TraceHitItemLastFrame->DisableCustomDepth();
 	}
 }
 

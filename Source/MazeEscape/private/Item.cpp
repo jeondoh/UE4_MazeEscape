@@ -8,6 +8,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Curves/CurveVector.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
@@ -51,9 +52,22 @@ void AItem::BeginPlay()
 
 	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnSphereOverlap);
 	AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AItem::OnSphereEndOverlap);
-
 	// 아이템 상태에 따라 Collision변경
 	SetItemProperties(ItemState);
+	// CustomDepth(아이템 메테리얼(glow effect)) 초기화
+	InitializeCustomDepth();
+	// 타이머 경과 > 경과시간은 UpdatePulse에서 사용
+	StartPulseTimer();
+}
+
+void AItem::OnConstruction(const FTransform& Transform)
+{
+	if(MaterialInstance)
+	{
+		DynamicMaterialInstance = UMaterialInstanceDynamic::Create(MaterialInstance, this);
+		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
+	}
+	EnableGlowMaterial();
 }
 
 // Called every frame
@@ -63,9 +77,10 @@ void AItem::Tick(float DeltaTime)
 	
 	// EquipInterping 상태일때 커브를 이용한 아이템 획득
 	ItemInterp(DeltaTime);
-
 	// 아이템 회전 (bRotate 여부에 따라)
 	ItemRotate(DeltaTime);
+	// Dynamic 메테리얼의 파라메터값을 Curve로 적용
+	UpdatePulse();
 }
 
 void AItem::InitalizedData()
@@ -83,6 +98,12 @@ void AItem::InitalizedData()
 	RotateSpeed = 40.f;
 	ItemType = EItemType::EIT_Etc;
 	InterpLocIndex = 0;
+	MaterialIndex = 0;
+	bCanChangeCustomDepth = true;
+	GlowAmount = 150.f;
+	FresnelExponent = 3.f;
+	FresnelReflectFraction = 4.f;
+	PulseCurveTime = 5.f;
 }
 
 void AItem::SetSwtichStars()
@@ -203,6 +224,39 @@ void AItem::SetItemProperties(EItemState State)
 	}
 }
 
+void AItem::UpdatePulse()
+{
+	float ElapsedTime{};
+	FVector CurveValue{};
+
+	switch (ItemState)
+	{
+		case EItemState::EIS_Pickup:
+			if(PulseCurve)
+			{
+				// 경과시간
+				ElapsedTime = GetWorldTimerManager().GetTimerElapsed(PulseTimer);
+				// 커브값 (MaterialPulseCurve)
+				CurveValue = PulseCurve->GetVectorValue(ElapsedTime);
+			}
+			break;
+		case EItemState::EIS_EquipInterping:
+			if(InterpPulseCurve)
+			{
+				ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ItemInerpTimer);
+				CurveValue = InterpPulseCurve->GetVectorValue(ElapsedTime);
+			}
+			break;
+	}
+	// 선택한 메테리얼에서 파라메터값 적용
+	if(DynamicMaterialInstance)
+	{
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowAmount"), CurveValue.X * GlowAmount);
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelExponent"), CurveValue.Y * FresnelExponent);
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelReflectFraction"), CurveValue.Z * FresnelReflectFraction);	
+	}
+}
+
 void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                             UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -264,7 +318,59 @@ FVector AItem::GetInterpLocation()
 		default:
 			return InterpPlayer->GetInterpLocation(InterpLocIndex).SceneComponent->GetComponentLocation();
 	}
-	return FVector(0.f);
+}
+
+void AItem::EnableCustomDepth()
+{
+	if(bCanChangeCustomDepth)
+	{
+		ItemMesh->SetRenderCustomDepth(true);		
+	}
+}
+
+void AItem::DisableCustomDepth()
+{
+	if(bCanChangeCustomDepth)
+	{
+		ItemMesh->SetRenderCustomDepth(false);		
+	}
+}
+
+void AItem::ResetPulseTimer()
+{
+	StartPulseTimer();
+}
+
+void AItem::StartPulseTimer()
+{
+	if(ItemState == EItemState::EIS_Pickup)
+	{
+		// 재귀
+		GetWorldTimerManager().SetTimer(PulseTimer, this, &AItem::ResetPulseTimer, PulseCurveTime);
+	}
+}
+
+void AItem::InitializeCustomDepth()
+{
+	DisableCustomDepth();
+}
+
+void AItem::EnableGlowMaterial()
+{
+	if(DynamicMaterialInstance)
+	{
+		// 메테리얼의 파라메터를 가져옴
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 0);
+	}
+}
+
+void AItem::DisableGlowMaterial()
+{
+	if(DynamicMaterialInstance)
+	{
+		// 메테리얼의 파라메터를 가져옴
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 1);
+	}
 }
 
 void AItem::SetItemState(EItemState State)
@@ -286,7 +392,8 @@ void AItem::StartItemCurve(AMazePlayer* SetPlayer)
 	InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, 1);
 	// 아이템 획득 사운드
 	PlayPickupSound();
-	// ZCurveTime 동안 ItemInterp 함수가 Tick에 의해 실행됨 >> 아이템 획득 효과를 주기위함 
+	// ZCurveTime 동안 ItemInterp 함수가 Tick에 의해 실행됨 >> 아이템 획득 효과를 주기위함
+	GetWorldTimerManager().ClearTimer(ItemInerpTimer);
 	GetWorldTimerManager().SetTimer(ItemInerpTimer, this, &AItem::FinishInterping, ZCurveTime);
 
 	// 카메라의 회전값과 아이템의 회전값을 차이를 구해 아이템과 카메라의 회전값을 같게 함
@@ -296,6 +403,8 @@ void AItem::StartItemCurve(AMazePlayer* SetPlayer)
 	// 아이템 Y 회전값
 	const float ItemRotationYaw{GetActorRotation().Yaw};
 	InterpInitalYawOffset = ItemRotationYaw - CameraRotationYaw;
+	// Glow 효과 여부 상태
+	bCanChangeCustomDepth = false;
 }
 
 void AItem::FinishInterping()
@@ -306,8 +415,13 @@ void AItem::FinishInterping()
 		InterpPlayer->GetPickupItem(this);
 		// Item Count 1감소
 		InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, -1);
+		SetItemState(EItemState::EIS_PickedUp);
 	}
 	SetActorScale3D(FVector(1.f));
+	// Glow 효과 disabled 
+	bCanChangeCustomDepth = true;
+	DisableGlowMaterial();
+	DisableCustomDepth();
 }
 
 void AItem::ItemInterp(float DeltaTime)
