@@ -31,6 +31,18 @@ enum class EItemState : uint8
 	
 	EIS_MAX UMETA(DisplayName = "DefaultMAX")
 };
+// 아이템 타입(탄약/무기 구분)
+UENUM(BlueprintType)
+enum class EItemType : uint8
+{
+	EIT_Etc UMETA(DisplayName = "Etc"),
+	EIT_Ammo UMETA(DisplayName = "Ammo"),
+	EIT_Weapon UMETA(DisplayName = "Weapon"),
+	
+	EIT_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
+
 
 UCLASS()
 class MAZEESCAPE_API AItem : public AActor
@@ -174,10 +186,24 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|Sound", meta=(AllowPrivateAccess=true))
 	class USoundCue* PickupSound;
 
+	void PlayPickupSound();
+	
 	// 아이템 장착 사운드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|Sound", meta=(AllowPrivateAccess=true))
 	class USoundCue* EquipSound;
+
+	/**************************************************************************************************/
+	/* 아이템 타입 */
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|Type", meta=(AllowPrivateAccess=true))
+	EItemType ItemType;
+	// Interp가 위치할 Player의 InterpLocations Index
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Items|Type", meta=(AllowPrivateAccess=true))
+	int32 InterpLocIndex;
 	
+	FVector GetInterpLocation();
+
+	/**************************************************************************************************/
 // Getter & Setter
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const {return PickupWidget;}
@@ -188,8 +214,8 @@ public:
 
 	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const {return ItemMesh;}
 	
-	FORCEINLINE USoundCue* GetPickupSound() const {return PickupSound;}
 	FORCEINLINE USoundCue* GetEquipSound() const {return EquipSound;}
+	void PlayEquipSound();
 
 	FORCEINLINE int32 GetItemCount() const {return ItemCount;}
 

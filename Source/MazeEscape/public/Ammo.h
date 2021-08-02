@@ -32,12 +32,30 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Ammo|Component", meta=(AllowPrivateAccess=true))
 	UStaticMeshComponent* AmmoMesh;
+
+	// 오버랩시 탄약 자동줍기 위한 컴포넌트
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Ammo|Component", meta=(AllowPrivateAccess=true))
+	class USphereComponent* AmmoCollisionSphere;
+
+	// 컴포넌트 충돌
+	UFUNCTION()
+	void AmmoSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	
 	/**************************************************************************************************/
 	/* 상태 */
 
 	// 탄약상태
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo|State", meta=(AllowPrivateAccess=true))
 	EAmmoType AmmoType;
+
+	/**************************************************************************************************/
+	/* 위젯 */
+
+	// 탄약 아이콘
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ammo|Widget", meta=(AllowPrivateAccess=true))
+	UTexture2D* AmmoIconTexture;
+	/**************************************************************************************************/
 	
 // Getter & Setter
 public:

@@ -19,6 +19,18 @@ enum class ECombatState : uint8
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
+USTRUCT(BlueprintType)
+struct FInterpLocation
+{
+	GENERATED_BODY()
+	// Interp위치에 사용
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* SceneComponent;
+	// 해당 Scene에 위치할 아이템 개수
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 ItemCount;
+};
+
 UCLASS()
 class MAZEESCAPE_API AMazePlayer : public ACharacter
 {
@@ -43,10 +55,7 @@ public:
 
 	/**************************************************************************************************/
 	/** 아이템 획득 **/
-
-	// 아이템의 위치를 카메라 위치의 CameraInterpDistance만큼 앞으로, CameraInterpElevation만큼 위로 배치
-	FVector GetCameraInterpLocation();
-
+	
 	void GetPickupItem(AItem* Item);
 	
 	/**************************************************************************************************/
@@ -302,17 +311,6 @@ private:
 	int8 OverlappedItemCount;
 
 	/**************************************************************************************************/
-	/** 아이템 획득 **/
-
-	// Inerp 대상에 대해 카메라에서 앞쪽으로 거리
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Items", meta=(AllowPrivateAccess=true))
-	float CameraInterpDistance;
-
-	// Inerp 대상에 대해 카메라에서 위쪽으로 거리
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Items", meta=(AllowPrivateAccess=true))
-	float CameraInterpElevation;
-
-	/**************************************************************************************************/
 	/** 무기 **/
 
 	// 블루프린트에서 기본 무기 지정
@@ -380,23 +378,71 @@ private:
 	// 탄약 확인
 	bool CarryingAmo();
 	// 탄창 Transform(위치, 회전, 스케일)
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Items|Ammo", meta = (AllowPrivateAccess=true))
 	FTransform ClipTransfrom;
 	// Scene Component 재장전 중 캐릭터 손에 탄창 부착
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* HandSceneComponent;
-		
+
 	/**************************************************************************************************/
+	/* interp시 위치 설정 */
+
+	// 무기 위치 설정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	USceneComponent* WeaponInterpComp;
+	// 탄약 위치 설정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	USceneComponent* InterpComp1;
+	// 탄약 위치 설정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	USceneComponent* InterpComp2;
+	// 탄약 위치 설정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	USceneComponent* InterpComp3;
+	// 탄약 위치 설정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	USceneComponent* InterpComp4;
+	// 탄약 위치 설정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	USceneComponent* InterpComp5;
+	// 탄약 위치 설정
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	USceneComponent* InterpComp6;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Items|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	TArray<FInterpLocation> InterpLocations;
+
+	void InitalizeInterpLocations();
+	void SetInterpComponent();
+
+	FTimerHandle PickUpSoundTimer;
+	FTimerHandle EquipSoundTimer;
+	// 아이템 줍기 사운드 여부
+	bool bShouldPlayPickUpSound;
+	// 무기 획득 사운드 여부
+	bool bShouldPlayEquipSound;
+	// 아이템 줍기 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|Sound|Timer", meta=(AllowPrivateAccess=true))
+	float PickUpSoundResetTime;
+	// 무기 획득 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Items|Sound|Timer", meta=(AllowPrivateAccess=true))
+	float EquipSoundResetTime;
+
+	UFUNCTION()
+	void ResetPickupSoundTimer();
+	UFUNCTION()
+	void ResetEquipSoundTimer();
 	
+	/**************************************************************************************************/
+
 // Getter & Setter
 public:
 	FORCEINLINE ECombatState GetCombatState() const {return CombatState;}
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const {return CameraBoom;}
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 	FORCEINLINE bool GetAiming() const {return bAiming;}
-
 	FORCEINLINE bool GetCrouching() const {return bCrouching;}
-
+	
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCrosshairSpreadMultiplier() const {return CrosshairSpreadMultiplier;}
 
@@ -404,4 +450,16 @@ public:
 	// 오버랩되는 아이템 개수 계산 
 	// 오버랩시 아이템 위젯 창 팝업
 	void IncrementOverlappedItemCount(int8 Amount);
+
+	FInterpLocation GetInterpLocation(int32 Index);
+	// ItemCount가 가장 적은 interpLocations의 Index 반환
+	int32 GetInterpLocationIndex();
+
+	void IncrementInterpLocItemCount(int32 Index, int32 Amount);
+
+	FORCEINLINE bool GetShouldPlayPickUpSound() const {return bShouldPlayPickUpSound;}
+	FORCEINLINE bool GetShouldPlayEquipSound() const {return bShouldPlayEquipSound;}
+
+	void StartPickUpSoundTimer();
+	void StartEquipSoundTimer();
 };

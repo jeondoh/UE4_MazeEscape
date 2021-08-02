@@ -8,6 +8,8 @@
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 AItem::AItem()
@@ -79,6 +81,8 @@ void AItem::InitalizedData()
 	InterpInitalYawOffset = 0.f;
 	bRotate = false;
 	RotateSpeed = 40.f;
+	ItemType = EItemType::EIT_Etc;
+	InterpLocIndex = 0;
 }
 
 void AItem::SetSwtichStars()
@@ -225,6 +229,44 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	}
 }
 
+void AItem::PlayPickupSound()
+{
+	if(InterpPlayer && InterpPlayer->GetShouldPlayPickUpSound())
+	{
+		InterpPlayer->StartPickUpSoundTimer();
+		if(PickupSound)
+		{
+			UGameplayStatics::PlaySound2D(this, PickupSound);
+		}
+	}
+}
+
+void AItem::PlayEquipSound()
+{
+	if(InterpPlayer && InterpPlayer->GetShouldPlayEquipSound())
+	{
+		InterpPlayer->StartEquipSoundTimer();
+		if(PickupSound)
+		{
+			UGameplayStatics::PlaySound2D(this, EquipSound);
+		}
+	}
+}
+
+FVector AItem::GetInterpLocation()
+{
+	if(InterpPlayer == nullptr) return FVector(0.f);
+
+	switch(ItemType)
+	{
+		case EItemType::EIT_Weapon:
+			return InterpPlayer->GetInterpLocation(0).SceneComponent->GetComponentLocation();
+		default:
+			return InterpPlayer->GetInterpLocation(InterpLocIndex).SceneComponent->GetComponentLocation();
+	}
+	return FVector(0.f);
+}
+
 void AItem::SetItemState(EItemState State)
 {
 	ItemState = State;
@@ -233,11 +275,17 @@ void AItem::SetItemState(EItemState State)
 
 void AItem::StartItemCurve(AMazePlayer* SetPlayer)
 {
+	bInterping = true;
+	SetItemState(EItemState::EIS_EquipInterping);
+
 	InterpPlayer = SetPlayer;
 	ItemInterpStartLocation = GetActorLocation();
-
-	SetItemState(EItemState::EIS_EquipInterping);
-	bInterping = true;
+	// InterpLocations의 가장 작은 ItemCount를 가진 인덱스
+	InterpLocIndex = InterpPlayer->GetInterpLocationIndex();
+	// Item Count 1증가
+	InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, 1);
+	// 아이템 획득 사운드
+	PlayPickupSound();
 	// ZCurveTime 동안 ItemInterp 함수가 Tick에 의해 실행됨 >> 아이템 획득 효과를 주기위함 
 	GetWorldTimerManager().SetTimer(ItemInerpTimer, this, &AItem::FinishInterping, ZCurveTime);
 
@@ -256,6 +304,8 @@ void AItem::FinishInterping()
 	if(InterpPlayer)
 	{
 		InterpPlayer->GetPickupItem(this);
+		// Item Count 1감소
+		InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, -1);
 	}
 	SetActorScale3D(FVector(1.f));
 }
@@ -273,7 +323,7 @@ void AItem::ItemInterp(float DeltaTime)
 		// 아이템 위치
 		FVector ItemLocation = ItemInterpStartLocation;
 		// 카메라 Interp 위치
-		const FVector CameraInterpLocation{InterpPlayer->GetCameraInterpLocation()};
+		const FVector CameraInterpLocation{GetInterpLocation()};
 		// 카메라와 아이템 위치의 Z좌표 거리
 		const FVector ItemToCamera{FVector(0.f, 0.f, (CameraInterpLocation - ItemLocation).Z)};
 		const float DeltaZ = ItemToCamera.Size();

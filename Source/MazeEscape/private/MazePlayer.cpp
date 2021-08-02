@@ -35,12 +35,10 @@ AMazePlayer::AMazePlayer()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
-
 	// 마우스 회전시 캐릭터가 따라오지 않게 설정
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
-
 	// 캐릭터 움직임 
 	GetCharacterMovement()->bOrientRotationToMovement = false; // 입력하는 방향으로 캐릭터 움직임(이동 방향으로 회전)
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f); // 이동방향을 정할때 회전속도
@@ -48,6 +46,9 @@ AMazePlayer::AMazePlayer()
 	GetCharacterMovement()->AirControl = 0.4f; // 공기저항
 	// 캐릭터 손 컴포넌트
 	HandSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("HandSceneComp"));
+	// Interp 위치 조정
+	SetInterpComponent();
+	InitalizeInterpLocations();
 }
 
 // Called when the game starts or when spawned
@@ -135,14 +136,16 @@ void AMazePlayer::InitalizedData()
 	AutomaticFireRate = 0.2f; // 자동발사 사격속도(간격)
 	/* 아이템 */
 	bShouldTraceForItems = false; // 아이템 추적
-	/* 아이템 획득 */
-	CameraInterpDistance = 100.f; // Inerp 대상에 대해 카메라에서 앞쪽으로 거리
-	CameraInterpElevation = 20.f; // Inerp 대상에 대해 카메라에서 위쪽으로 거리
 	/* 탄약 */
 	Starting9mmAmmo = 85; // 9mm 탄약개수
 	StartingARAmmo = 120; // AR 탄약개수
 	/* 애니메이션 */
 	bCrouching = false; // 웅크리기
+	/* Interp 설정 */
+	bShouldPlayPickUpSound = true; // 아이템 줍기 사운드 여부
+	bShouldPlayEquipSound = true; // 무기 획득 사운드 여부
+	PickUpSoundResetTime = 0.2f; // 아이템 줍기 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
+	EquipSoundResetTime = 0.2f; // 무기 획득 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -169,20 +172,14 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("LookUp", this, &AMazePlayer::LookUp);
 }
 
-FVector AMazePlayer::GetCameraInterpLocation()
-{
-	const FVector CameraWorldLocation{FollowCamera->GetComponentLocation()};
-	const FVector CameraForward{FollowCamera->GetForwardVector()};
-	return CameraWorldLocation + CameraForward * CameraInterpDistance + FVector(0.f, 0.f, CameraInterpElevation);
-}
-
 void AMazePlayer::GetPickupItem(AItem* Item)
 {
 	// 무기 장착 소리
-	if(Item->GetEquipSound())
+	if(Item)
 	{
-		UGameplayStatics::PlaySound2D(this, Item->GetEquipSound());
+		Item->PlayEquipSound();
 	}
+	
 	AWeapon* Weapon = Cast<AWeapon>(Item);
 	if(Weapon)
 	{
@@ -420,11 +417,6 @@ void AMazePlayer::InteractionBtnPressed()
 	{
 		// 아이템 Z커브
 		TraceHitItem->StartItemCurve(this);
-		// 아이템 획득 사운드
-		if(TraceHitItem->GetPickupSound())
-		{
-			UGameplayStatics::PlaySound2D(this, TraceHitItem->GetPickupSound());
-		}
 	}
 	
 }
@@ -754,6 +746,102 @@ bool AMazePlayer::CarryingAmo()
 	return false;
 }
 
+int32 AMazePlayer::GetInterpLocationIndex()
+{
+	int32 LowestIndex = 1;
+	int32 LowestCount = INT_MAX;
+	int32 InterpSize = InterpLocations.Num();
+	
+	for(int32 i = 1; i < InterpSize; i++)
+	{
+		if(InterpLocations[i].ItemCount < LowestCount)
+		{
+			LowestIndex = i;
+			LowestCount = InterpLocations[i].ItemCount; 
+		}
+	}
+	return LowestIndex;
+}
+
+void AMazePlayer::IncrementInterpLocItemCount(int32 Index, int32 Amount)
+{
+	if(Amount < -1 || Amount > 1) return;
+	if(InterpLocations.Num() >= Index)
+	{
+		InterpLocations[Index].ItemCount += Amount;
+	}
+}
+
+void AMazePlayer::StartPickUpSoundTimer()
+{
+	bShouldPlayPickUpSound = false;
+	GetWorldTimerManager().SetTimer(PickUpSoundTimer, this, &AMazePlayer::ResetPickupSoundTimer, PickUpSoundResetTime);
+}
+
+void AMazePlayer::StartEquipSoundTimer()
+{
+	bShouldPlayEquipSound = false;
+	GetWorldTimerManager().SetTimer(EquipSoundTimer, this, &AMazePlayer::ResetEquipSoundTimer, EquipSoundResetTime);
+}
+
+void AMazePlayer::InitalizeInterpLocations()
+{
+	FInterpLocation WeaponLocation{WeaponInterpComp, 0};
+	InterpLocations.Add(WeaponLocation);
+	
+	FInterpLocation InterpLoc1{InterpComp1, 0};
+	InterpLocations.Add(InterpLoc1);
+
+	FInterpLocation InterpLoc2{InterpComp2, 0};
+	InterpLocations.Add(InterpLoc2);
+
+	FInterpLocation InterpLoc3{InterpComp3, 0};
+	InterpLocations.Add(InterpLoc3);
+
+	FInterpLocation InterpLoc4{InterpComp4, 0};
+	InterpLocations.Add(InterpLoc4);
+
+	FInterpLocation InterpLoc5{InterpComp5, 0};
+	InterpLocations.Add(InterpLoc5);
+
+	FInterpLocation InterpLoc6{InterpComp6, 0};
+	InterpLocations.Add(InterpLoc6);
+}
+
+void AMazePlayer::SetInterpComponent()
+{
+	WeaponInterpComp = CreateDefaultSubobject<USceneComponent>(TEXT("Weapon InterpComp"));
+	WeaponInterpComp->SetupAttachment(GetFollowCamera());
+	
+	InterpComp1 = CreateDefaultSubobject<USceneComponent>(TEXT("InterpComp1"));
+	InterpComp1->SetupAttachment(GetFollowCamera());
+
+	InterpComp2 = CreateDefaultSubobject<USceneComponent>(TEXT("InterpComp2"));
+	InterpComp2->SetupAttachment(GetFollowCamera());
+
+	InterpComp3 = CreateDefaultSubobject<USceneComponent>(TEXT("InterpComp3"));
+	InterpComp3->SetupAttachment(GetFollowCamera());
+
+	InterpComp4 = CreateDefaultSubobject<USceneComponent>(TEXT("InterpComp4"));
+	InterpComp4->SetupAttachment(GetFollowCamera());
+
+	InterpComp5 = CreateDefaultSubobject<USceneComponent>(TEXT("InterpComp5"));
+	InterpComp5->SetupAttachment(GetFollowCamera());
+
+	InterpComp6 = CreateDefaultSubobject<USceneComponent>(TEXT("InterpComp6"));
+	InterpComp6->SetupAttachment(GetFollowCamera());
+}
+
+void AMazePlayer::ResetPickupSoundTimer()
+{
+	bShouldPlayPickUpSound = true;
+}
+
+void AMazePlayer::ResetEquipSoundTimer()
+{
+	bShouldPlayEquipSound = true;
+}
+
 void AMazePlayer::IncrementOverlappedItemCount(int8 Amount)
 {
 	if(OverlappedItemCount + Amount <= 0)
@@ -764,6 +852,15 @@ void AMazePlayer::IncrementOverlappedItemCount(int8 Amount)
 	}
 	OverlappedItemCount += Amount;
 	bShouldTraceForItems = true;
+}
+
+FInterpLocation AMazePlayer::GetInterpLocation(int32 Index)
+{
+	if(Index <= InterpLocations.Num())
+	{
+		return InterpLocations[Index];
+	}
+	return FInterpLocation();
 }
 
 void AMazePlayer::InterpCapsuleHalfHeight(float DeltaTime)
