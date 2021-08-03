@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
 
@@ -41,8 +42,31 @@ enum class EItemType : uint8
 	
 	EIT_MAX UMETA(DisplayName = "DefaultMAX")
 };
+// 데이터 테이블 정의 / 아이템 희귀도
+USTRUCT(BlueprintType)
+struct FItemRarityTable : public FTableRowBase
+{
+	GENERATED_BODY()
 
-
+	// 아이템 테두리(발광)색
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor GlowColor;
+	// 아이템 Widget의 상단 배경색
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor LightColor;
+	// 아이템 Widget의 하단 배경색
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor DarkColor;
+	// 아이템 별 개수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 NumberOfStars;
+	// 인벤토리 아이템 배경 이미지
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* IconBackground;
+	// 무기의 CustomDepth값
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 CustomDepthStencil;
+};
 
 UCLASS()
 class MAZEESCAPE_API AItem : public AActor
@@ -265,9 +289,6 @@ private:
 	/**************************************************************************************************/
 	/* 인벤토리 */
 
-	// 인벤토리 슬롯별 뒷배경
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
-	UTexture2D* IconBackground;
 	// 인벤토리 아이템 아이콘
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
 	UTexture2D* IconItem;
@@ -281,6 +302,29 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
 	bool bCharacterInventoryFull;
 	
+	/**************************************************************************************************/
+
+	// 아이템 희귀도 DataTable
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DataTable", meta=(AllowPrivateAccess=true))
+	class UDataTable* ItemRarityDataTable;
+	// 아이템 테두리(발광)색
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|DataTable|Rarity", meta=(AllowPrivateAccess=true))
+	FLinearColor GlowColor;
+	// 아이템 Widget의 상단 배경색
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|DataTable|Rarity", meta=(AllowPrivateAccess=true))
+	FLinearColor LightColor;
+	// 아이템 Widget의 하단 배경색
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|DataTable|Rarity", meta=(AllowPrivateAccess=true))
+	FLinearColor DarkColor;
+	// 아이템 별 개수
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|DataTable|Rarity", meta=(AllowPrivateAccess=true))
+	int32 NumberOfStars;
+	// 인벤토리 아이템 배경 이미지
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|DataTable|Rarity", meta=(AllowPrivateAccess=true))
+	UTexture2D* IconBackground;
+
+	void SetRarityDataTable();
+
 	/**************************************************************************************************/
 	
 // Getter & Setter
