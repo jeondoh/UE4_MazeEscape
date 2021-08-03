@@ -299,26 +299,46 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	}
 }
 
-void AItem::PlayPickupSound()
+void AItem::PlayPickupSound(bool bForcePlaySound)
 {
-	if(InterpPlayer && InterpPlayer->GetShouldPlayPickUpSound())
+	if(InterpPlayer)
+	{
+		if(bForcePlaySound)
+		{
+			if(PickupSound)
+			{
+				UGameplayStatics::PlaySound2D(this, PickupSound);
+			}
+		}
+	}
+	else if(InterpPlayer && InterpPlayer->GetShouldPlayPickUpSound())
 	{
 		InterpPlayer->StartPickUpSoundTimer();
 		if(PickupSound)
 		{
 			UGameplayStatics::PlaySound2D(this, PickupSound);
-		}
+		}		
 	}
 }
 
-void AItem::PlayEquipSound()
+void AItem::PlayEquipSound(bool bForcePlaySound)
 {
-	if(InterpPlayer && InterpPlayer->GetShouldPlayEquipSound())
+	if(InterpPlayer)
 	{
-		InterpPlayer->StartEquipSoundTimer();
-		if(PickupSound)
+		if(bForcePlaySound)
 		{
-			UGameplayStatics::PlaySound2D(this, EquipSound);
+			if(PickupSound)
+			{
+				UGameplayStatics::PlaySound2D(this, EquipSound);
+			}
+		}
+		else if(InterpPlayer->GetShouldPlayEquipSound())
+		{
+			InterpPlayer->StartEquipSoundTimer();
+			if(PickupSound)
+			{
+				UGameplayStatics::PlaySound2D(this, EquipSound);
+			}			
 		}
 	}
 }
@@ -395,7 +415,7 @@ void AItem::SetItemState(EItemState State)
 	SetItemProperties(State);
 }
 
-void AItem::StartItemCurve(AMazePlayer* SetPlayer)
+void AItem::StartItemCurve(AMazePlayer* SetPlayer, bool bForcePlaySound)
 {
 	bInterping = true;
 	SetItemState(EItemState::EIS_EquipInterping);
@@ -407,7 +427,7 @@ void AItem::StartItemCurve(AMazePlayer* SetPlayer)
 	// Item Count 1증가
 	InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, 1);
 	// 아이템 획득 사운드
-	PlayPickupSound();
+	PlayPickupSound(bForcePlaySound);
 	// ZCurveTime 동안 ItemInterp 함수가 Tick에 의해 실행됨 >> 아이템 획득 효과를 주기위함
 	GetWorldTimerManager().ClearTimer(ItemInerpTimer);
 	GetWorldTimerManager().SetTimer(ItemInerpTimer, this, &AItem::FinishInterping, ZCurveTime);

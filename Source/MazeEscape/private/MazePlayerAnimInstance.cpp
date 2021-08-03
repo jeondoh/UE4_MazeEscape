@@ -151,23 +151,25 @@ void UMazePlayerAnimInstance::CharacterStateUpdate()
 	bReloading = MazePlayer->GetCombatState() == ECombatState::ECS_Reloading;
 	// 웅크리기 여부
 	bCrouching = MazePlayer->GetCrouching();
+	// 장비착용 여부
+	bEquipping = MazePlayer->GetCombatState() == ECombatState::ECS_Equipping;
 }
 
 void UMazePlayerAnimInstance::SetRecoilWeight()
 {
 	if(bTurningInPlace)
 	{
-		RecoilWeight = bReloading ? 1.f : 0.1f;
+		RecoilWeight = bEquipping || bReloading ? 1.f : 0.1f;
 		return;
 	}
 	// 웅크리고 재장전 중일 경우
 	if(bCrouching)
 	{
-		RecoilWeight = bReloading ? 1.f : 0.1f;
+		RecoilWeight = bEquipping || bReloading ? 1.f : 0.1f;
 	}
 	else
 	{
-		RecoilWeight = bAiming || bReloading ? 1.f : 0.5f;
+		RecoilWeight = bEquipping || bAiming || bReloading ? 1.f : 0.5f;
 	}
 }
 

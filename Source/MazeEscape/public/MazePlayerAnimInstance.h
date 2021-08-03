@@ -110,6 +110,10 @@ private:
 	// 오프셋 상태
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="State", meta=(AllowPrivateAccess=true))
 	EOffsetState OffsetState;
+	
+	// 장비스왑 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="State", meta=(AllowPrivateAccess=true))
+	bool bEquipping;
 
 	// 웅크리기 여부
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Crouching", meta=(AllowPrivateAccess=true))

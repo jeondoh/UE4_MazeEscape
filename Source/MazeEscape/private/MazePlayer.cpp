@@ -69,6 +69,8 @@ void AMazePlayer::BeginPlay()
 	// 아이템 테두리 GLow 효과
 	EquippedWeapon->DisableCustomDepth();
 	EquippedWeapon->DisableGlowMaterial();
+	// Item 클래스에 Player 할당
+	EquippedWeapon->SetCharacter(this);
 	// TMAP 초기화
 	InitializeAmmoMap();
 	// 캐릭터 이동속도
@@ -438,7 +440,7 @@ void AMazePlayer::InteractionBtnPressed()
 	if(TraceHitItem && bShouldTraceForItems)
 	{
 		// 아이템 Z커브
-		TraceHitItem->StartItemCurve(this);
+		TraceHitItem->StartItemCurve(this, true);
 		TraceHitItem = nullptr;
 	}
 	
@@ -523,6 +525,11 @@ void AMazePlayer::CrouchButtonPressed()
 		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 		GetCharacterMovement()->GroundFriction = BaseGroundFriction;
 	}
+}
+
+void AMazePlayer::FinishEquipping()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
 }
 
 bool AMazePlayer::TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation, float Multiply)
@@ -956,6 +963,16 @@ void AMazePlayer::ExchangeInventoryItems(int32 CurrentItemIndex, int32 NewItemIn
 
 	OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
 	NewWeapon->SetItemState(EItemState::EIS_Equipped);
+
+	CombatState = ECombatState::ECS_Equipping;
+	
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && EquippedMontage)
+	{
+		AnimInstance->Montage_Play(EquippedMontage, 1.0f);
+		AnimInstance->Montage_JumpToSection(FName("Equip"));
+	}
+	NewWeapon->PlayEquipSound(true);
 }
 
 void AMazePlayer::OnekeyPressed()

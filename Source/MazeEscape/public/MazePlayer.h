@@ -15,6 +15,7 @@ enum class ECombatState : uint8
 	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
+	ECS_Equipping UMETA(DisplayName = "Equipping"),
 
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
@@ -288,8 +289,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* ReloadMontage;
 
+	// 무기스왑 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
+	class UAnimMontage* EquippedMontage;
 
 	void CrouchButtonPressed();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishEquipping();
 
 	/**************************************************************************************************/
 	/** 위젯  **/

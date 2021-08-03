@@ -56,8 +56,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void StartItemCurve(class AMazePlayer* SetPlayer);
-	void PlayEquipSound();
+	void StartItemCurve(class AMazePlayer* SetPlayer, bool bForcePlaySound = false);
+	void PlayEquipSound(bool bForcePlaySound = false);
 
 	/* 아이템 테두리 Glow 효과 파라메터 */
 	virtual void EnableCustomDepth();
@@ -205,7 +205,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Sound", meta=(AllowPrivateAccess=true))
 	class USoundCue* PickupSound;
 
-	void PlayPickupSound();
+	void PlayPickupSound(bool bForcePlaySound = false);
 	
 	// 아이템 장착 사운드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Sound", meta=(AllowPrivateAccess=true))
@@ -299,6 +299,8 @@ public:
 
 	FORCEINLINE int32 GetSlotIndex() const {return SlotIndex;}
 	FORCEINLINE void SetSlotIndex(int32 Index) {SlotIndex = Index;}
+
+	FORCEINLINE void SetCharacter(AMazePlayer* Player) {InterpPlayer = Player;}
 
 	
 
