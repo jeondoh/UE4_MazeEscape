@@ -269,7 +269,7 @@ private:
 	// 총소리 10개 랜덤 재생
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Sounds", meta = (AllowPrivateAccess=true))
 	class USoundCue* FireSound;
-	// 스켈레톤 > 무기 > BareelSocket 발사 효과
+	// 스켈레톤 > 무기 > BarrelSocket 발사 효과
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* MuzzleFlash;
 	// 총알 충돌시 효과
@@ -506,4 +506,6 @@ public:
 
 	void StartPickUpSoundTimer();
 	void StartEquipSoundTimer();
+	
+	FORCEINLINE AWeapon* GetEquippedWeapon() const {return EquippedWeapon;}
 };

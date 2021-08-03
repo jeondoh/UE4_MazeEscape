@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "WeaponType.h"
 #include "MazePlayerAnimInstance.generated.h"
 
 UENUM(BlueprintType)
@@ -43,6 +44,8 @@ protected:
 	void SetRecoilWeight();
 
 	void SetEOffsetState();
+	// 장착중인 무기종류 가져오기
+	void GetWeaponType();
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Movement", meta=(AllowPrivateAccess=true))
@@ -126,5 +129,9 @@ private:
 	// 캐릭터 회전여부
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat", meta=(AllowPrivateAccess=true))
 	bool bTurningInPlace;
+
+	// 무기종류
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat", meta=(AllowPrivateAccess=true))
+	EWeaponType EquippedWeaponType;
 	
 };

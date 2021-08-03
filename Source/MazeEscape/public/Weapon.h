@@ -5,16 +5,9 @@
 #include "CoreMinimal.h"
 #include "Item.h"
 #include "AmmoType.h"
+#include "WeaponType.h"
 #include "Weapon.generated.h"
 
-UENUM(BlueprintType)
-enum class EWeaponType : uint8
-{
-	EWT_SubmachineGun UMETA(DisplayName = "SubmachineGun"),
-	EWT_AssaultRifle UMETA(DisplayName = "AsaultRifle"),
-
-	EWT_MAX UMETA(DisplayName = "DefaultMAX")
-};
 // 데이터 테이블 정의 / 무기 속성
 USTRUCT(BlueprintType)
 struct FWeaponDataTable : public FTableRowBase
@@ -35,9 +28,6 @@ struct FWeaponDataTable : public FTableRowBase
 	// 무기 장착 소리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USoundCue* EquipSound;
-	// 무기픽업 위젯
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UWidgetComponent* PickupWidget;
 	// 무기 스켈레톤(외형)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USkeletalMesh* ItemMesh;
@@ -50,6 +40,12 @@ struct FWeaponDataTable : public FTableRowBase
 	// 인벤토리 탄약 아이콘
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* AmmoIcon;
+	// 무기종류별 메테리얼
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UMaterialInstance* MaterialInstance;
+	// 메테리얼 인덱스
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 MaterialIndex;
 };
 
 /**
@@ -74,7 +70,7 @@ public:
 	// 탄창용량확인
 	bool ClipIsFull();
 protected:
-
+	virtual void OnConstruction(const FTransform& Transform) override;
 	
 private:
 	/**************************************************************************************************/
@@ -123,6 +119,13 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|DataTable", meta=(AllowPrivateAccess=true))
 	UDataTable* WeaponDataTable;
+
+	// 이전 메테리얼 인덱스값
+	int32 PreviousMaterialIndex;
+	
+	void SetWeaponDataTable();
+
+	/**************************************************************************************************/
 	
 // Getter & Setter	
 public:

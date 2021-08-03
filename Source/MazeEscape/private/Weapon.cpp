@@ -32,6 +32,13 @@ void AWeapon::Tick(float DeltaSeconds)
 	} 
 }
 
+void AWeapon::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	// 무기 테이블 로드
+	SetWeaponDataTable();
+}
+
 void AWeapon::ThrowWeapon()
 {
 	FRotator MeshRotation{0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f};
@@ -68,6 +75,51 @@ void AWeapon::StopFalling()
 	EnableGlowMaterial();
 	// 타이머 경과 > 경과시간은 UpdatePulse에서 사용
 	StartPulseTimer();
+}
+
+void AWeapon::SetWeaponDataTable()
+{
+	const FString WeaponTablePath{TEXT("DataTable'/Game/00_MazeDev/DataTable/WeaponDataTable.WeaponDataTable'")};
+	UDataTable* WeaponTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *WeaponTablePath));
+
+	if (WeaponTableObject)
+	{
+		FWeaponDataTable* WeaponDataRow = nullptr;
+		switch (WeaponType)
+		{
+		case EWeaponType::EWT_SubmachineGun:
+			WeaponDataRow = WeaponTableObject->FindRow<FWeaponDataTable>(FName("SubmachineGun"), TEXT(""));			
+			break;
+		case EWeaponType::EWT_AssaultRifle:
+			WeaponDataRow = WeaponTableObject->FindRow<FWeaponDataTable>(FName("AssaultRifle"), TEXT(""));			
+			break;
+		}
+		if(WeaponDataRow)
+		{
+			AmmoType = WeaponDataRow->AmmoType;
+            Ammo = WeaponDataRow->WeaponAmmo;
+            MagazineCapacity = WeaponDataRow->MagazingCapacity;
+            SetPickupSound(WeaponDataRow->PickupSound); 
+            SetEquipSound(WeaponDataRow->EquipSound); 
+            GetItemMesh()->SetSkeletalMesh(WeaponDataRow->ItemMesh);
+			SetItemName(WeaponDataRow->ItemName);
+			SetIconItem(WeaponDataRow->InventoryIcon);
+			SetAmmoIcon(WeaponDataRow->AmmoIcon);
+			SetMaterialInstance(WeaponDataRow->MaterialInstance);
+			// 메테리얼 초기화 후 적용
+			PreviousMaterialIndex = GetMaterialIndex();
+			GetItemMesh()->SetMaterial(PreviousMaterialIndex, nullptr);
+			SetMaterialIndex(WeaponDataRow->MaterialIndex);
+		}
+	}
+	// GLOW 메테리얼 효과
+	if(GetMaterialInstance())
+	{
+		SetMaterialInstanceDynamic(UMaterialInstanceDynamic::Create(GetMaterialInstance(), this));
+		GetMaterialInstanceDynamic()->SetVectorParameterValue(TEXT("FresnelColor"), GetGlowColor());
+		GetItemMesh()->SetMaterial(GetMaterialIndex(), GetMaterialInstanceDynamic());
+		EnableGlowMaterial();
+	}
 }
 
 bool AWeapon::ClipIsFull()

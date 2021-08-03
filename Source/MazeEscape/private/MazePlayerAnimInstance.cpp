@@ -64,6 +64,8 @@ void UMazePlayerAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 		bAiming = MazePlayer->GetAiming(); // 에이밍 여부
 		SetEOffsetState();
+		// 장착중인 무기종류 가져오기
+		GetWeaponType();
 	}
 	TurnInPlace();
 	Lean(DeltaTime);
@@ -190,5 +192,14 @@ void UMazePlayerAnimInstance::SetEOffsetState()
 	else
 	{
 		OffsetState = EOffsetState::EOS_Hip;
+	}
+}
+
+void UMazePlayerAnimInstance::GetWeaponType()
+{
+	if(MazePlayer->GetEquippedWeapon())
+	{
+		// 장착중인 무기종류 가져오기
+		EquippedWeaponType = MazePlayer->GetEquippedWeapon()->GetWeaponType();
 	}
 }
