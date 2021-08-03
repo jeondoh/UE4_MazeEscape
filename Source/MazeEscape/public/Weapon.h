@@ -15,6 +15,42 @@ enum class EWeaponType : uint8
 
 	EWT_MAX UMETA(DisplayName = "DefaultMAX")
 };
+// 데이터 테이블 정의 / 무기 속성
+USTRUCT(BlueprintType)
+struct FWeaponDataTable : public FTableRowBase
+{
+	GENERATED_BODY()
+	// 탄약종류 열거형
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EAmmoType AmmoType;
+	// 탄약수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 WeaponAmmo;
+	// 탄창용량
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 MagazingCapacity;
+	// 무기 주울때 소리
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USoundCue* PickupSound;
+	// 무기 장착 소리
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USoundCue* EquipSound;
+	// 무기픽업 위젯
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UWidgetComponent* PickupWidget;
+	// 무기 스켈레톤(외형)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMesh* ItemMesh;
+	// 무기 이름
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString ItemName;
+	// 인벤토리 아이콘
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* InventoryIcon;
+	// 인벤토리 탄약 아이콘
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* AmmoIcon;
+};
 
 /**
  * 
@@ -81,6 +117,12 @@ private:
 	// 리로드 몽타주 색션 이름
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
 	FName ReloadMontageSection;
+	
+	/**************************************************************************************************/
+	/* 무기 데이터테이블 */
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|DataTable", meta=(AllowPrivateAccess=true))
+	UDataTable* WeaponDataTable;
 	
 // Getter & Setter	
 public:
