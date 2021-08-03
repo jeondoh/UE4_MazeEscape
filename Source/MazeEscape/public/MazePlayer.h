@@ -33,6 +33,7 @@ struct FInterpLocation
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHighlightIconDelegate, int32, SlotIndex, bool, bStartAnimation);
 
 UCLASS()
 class MAZEESCAPE_API AMazePlayer : public ACharacter
@@ -60,9 +61,13 @@ public:
 	/** 아이템 획득 **/
 	
 	void GetPickupItem(AItem* Item);
-	
-	/**************************************************************************************************/
 
+	/**************************************************************************************************/
+	/** 인벤토리 **/
+	
+	void HighlightInventorySlot();
+	void UnHighlightInventorySlot();
+	
 private:
 
 	// 변수 초기화
@@ -334,7 +339,7 @@ private:
 	AWeapon* SpawnDefaultWeapon();
 
 	// 무기 장착
-	void EquipWeapon(AWeapon* WeaponToEquip);
+	void EquipWeapon(AWeapon* WeaponToEquip, bool bSwapping = false);
 
 	// 무기 장착 해제 이후 땅에 떨어트림
 	void DropWeapon();
@@ -449,10 +454,18 @@ private:
 	TArray<AItem*> Inventory;
 	// 인벤토리 무기 개수
 	const int32 INVENTORY_CAPACITY{4};
-
 	// 인벤토리에 슬롯 정보 전송(장비장착할때)
 	UPROPERTY(BlueprintAssignable, Category="Settings|Inventory|Delegates", meta=(AllowPrivateAccess=true))
 	FEquipItemDelegate EquipItemDelegate;
+	// 인벤토리 빈공간에 하이라이트 애니메이션 효과 지정 역활
+	UPROPERTY(BlueprintAssignable, Category="Settings|Inventory|Delegates", meta=(AllowPrivateAccess=true))
+	FHighlightIconDelegate HighlightIconDelegate;
+	// 강조 표시(애니메이션)된 슬롯의 인덱스
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Inventory|Delegates", meta=(AllowPrivateAccess=true))
+	int32 HighlightedSlot;
+	// 빈 인벤토리 인덱스 가져오기
+	int32 GetEmptyInventorySlot();
+	void SetHighlightInventorySlot();
 	
 	/**************************************************************************************************/
 	/* 스왑 */
@@ -463,7 +476,7 @@ private:
 	void ThreekeyPressed();
 	void FourkeyPressed();
 	void KeyPressedToEquipped(int32 SlotIndex);
-	
+
 	/**************************************************************************************************/
 
 // Getter & Setter

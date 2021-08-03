@@ -268,18 +268,18 @@ private:
 	// 인벤토리 슬롯별 뒷배경
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
 	UTexture2D* IconBackground;
-
 	// 인벤토리 아이템 아이콘
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
 	UTexture2D* IconItem;
-
 	// 인벤토리 탄약 아이콘
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
 	UTexture2D* AmmoItem;
-
 	// 인벤토리 배열 Index
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
 	int32 SlotIndex;
+	// 인벤토리 공간여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
+	bool bCharacterInventoryFull;
 	
 	/**************************************************************************************************/
 	
@@ -302,6 +302,6 @@ public:
 
 	FORCEINLINE void SetCharacter(AMazePlayer* Player) {InterpPlayer = Player;}
 
-	
+	FORCEINLINE void SetCharacterInventoryFull(bool Full) {bCharacterInventoryFull = Full;}
 
 };

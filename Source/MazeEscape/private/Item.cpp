@@ -105,6 +105,7 @@ void AItem::InitalizedData()
 	FresnelReflectFraction = 4.f;
 	PulseCurveTime = 5.f;
 	SlotIndex = 0;
+	bCharacterInventoryFull = false;
 }
 
 void AItem::SetSwtichStars()
@@ -295,6 +296,7 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 		if(Player)
 		{
 			Player->IncrementOverlappedItemCount(-1);
+			Player->UnHighlightInventorySlot();
 		}
 	}
 }
@@ -451,6 +453,8 @@ void AItem::FinishInterping()
 		InterpPlayer->GetPickupItem(this);
 		// Item Count 1감소
 		InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, -1);
+		// 인벤토리 효과
+		InterpPlayer->UnHighlightInventorySlot();
 	}
 	SetActorScale3D(FVector(1.f));
 	// Glow 효과 disabled 

@@ -84,16 +84,12 @@ void AMazePlayer::Tick(float DeltaTime)
 
 	// 에이밍 줌인/줌아웃
 	CameraInterpZoom(DeltaTime);
-
 	// 에이밍 회전변수 설정
 	SetLookRate();
-
 	// Crosshair 계산
 	CalculateCrosshairSpread(DeltaTime);
-
 	// 캐릭터와 겹치는 아이템 추적
 	TraceForItems();
-
 	// 웅크리기/서있기의 캡슐 컴포넌트 크기 변화 Interp
 	InterpCapsuleHalfHeight(DeltaTime);
 }
@@ -154,6 +150,8 @@ void AMazePlayer::InitalizedData()
 	bShouldPlayEquipSound = true; // 무기 획득 사운드 여부
 	PickUpSoundResetTime = 0.2f; // 아이템 줍기 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
 	EquipSoundResetTime = 0.2f; // 무기 획득 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
+	/* 인벤토리 */
+	HighlightedSlot = -1; // 강조 표시(애니메이션)된 슬롯의 인덱스
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -567,15 +565,24 @@ void AMazePlayer::TraceForItems()
 		if(ItemTraceResult.bBlockingHit)
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.Actor);
-			if(TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
+			// 인벤토리 슬롯 하이라이트(애니메이션) 여부
+			SetHighlightInventorySlot();
+			
+			if(TraceHitItem)
 			{
-				TraceHitItem = nullptr;
+				if(TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
+				{
+					TraceHitItem = nullptr;
+				}
+				if(TraceHitItem->GetPickupWidget())
+				{
+					TraceHitItem->GetPickupWidget()->SetVisibility(true);
+					TraceHitItem->EnableCustomDepth();
+					// 인벤토리 공간
+					bool bInventoryFull = Inventory.Num() >= INVENTORY_CAPACITY ? true : false; 
+					TraceHitItem->SetCharacterInventoryFull(bInventoryFull);
+				}
 			}
-			if(TraceHitItem && TraceHitItem->GetPickupWidget())
-			{
-				TraceHitItem->GetPickupWidget()->SetVisibility(true);
-				TraceHitItem->EnableCustomDepth();
-			}			
 			if(TraceHitItemLastFrame)
 			{
 				// 다른 아이템일 경우
@@ -605,7 +612,7 @@ AWeapon* AMazePlayer::SpawnDefaultWeapon()
 	return nullptr;
 }
 
-void AMazePlayer::EquipWeapon(AWeapon* WeaponToEquip)
+void AMazePlayer::EquipWeapon(AWeapon* WeaponToEquip, bool bSwaping)
 {
 	if(WeaponToEquip)
 	{
@@ -621,7 +628,7 @@ void AMazePlayer::EquipWeapon(AWeapon* WeaponToEquip)
 			// -1 = 장착한 무기 없음. 아이콘 애니메이션 필요 X
 			EquipItemDelegate.Broadcast(-1, WeaponToEquip->GetSlotIndex());
 		}
-		else
+		else if(!bSwaping)
 		{
 			EquipItemDelegate.Broadcast(EquippedWeapon->GetSlotIndex(), WeaponToEquip->GetSlotIndex());
 		}
@@ -651,7 +658,7 @@ void AMazePlayer::SwapWeapon(AWeapon* WeaponToSwap)
 		WeaponToSwap->SetSlotIndex(EquippedWeapon->GetSlotIndex());
 	}
 	DropWeapon();
-	EquipWeapon(WeaponToSwap);
+	EquipWeapon(WeaponToSwap, true);
 	TraceHitItem = nullptr;
 	TraceHitItemLastFrame = nullptr;
 }
@@ -952,27 +959,79 @@ void AMazePlayer::MoveRight(float Value)
 	}
 }
 
+int32 AMazePlayer::GetEmptyInventorySlot()
+{
+	int32 InventorySize = Inventory.Num();
+	for(int32 i = 0; i < InventorySize; i++)
+	{
+		if(Inventory[i] == nullptr)
+		{
+			return i; // 빈자리 인덱스 반환
+		}
+	}
+	if(InventorySize < INVENTORY_CAPACITY)
+	{
+		return InventorySize;
+	}
+	return -1; // 빈자리가 없음
+}
+
+void AMazePlayer::SetHighlightInventorySlot()
+{
+	auto TraceHitWeapon = Cast<AWeapon>(TraceHitItem);
+	if (TraceHitWeapon)
+	{
+		if (HighlightedSlot == -1)
+		{
+			HighlightInventorySlot();
+		}
+	}
+	else
+	{
+		if (HighlightedSlot != -1)
+		{
+			// 하이라이트 애니메이션 X
+			UnHighlightInventorySlot();
+		}
+	}
+}
+
+void AMazePlayer::HighlightInventorySlot()
+{
+	const int32 EmptySlot{GetEmptyInventorySlot()}; // 빈 인벤토리 인덱스
+	HighlightIconDelegate.Broadcast(EmptySlot, true);
+	HighlightedSlot = EmptySlot;
+}
+
+void AMazePlayer::UnHighlightInventorySlot()
+{
+	HighlightIconDelegate.Broadcast(HighlightedSlot, false);
+	HighlightedSlot = -1;
+}
+
 void AMazePlayer::ExchangeInventoryItems(int32 CurrentItemIndex, int32 NewItemIndex)
 {
-	if(CurrentItemIndex == NewItemIndex || NewItemIndex >= Inventory.Num()
-		|| CombatState != ECombatState::ECS_Unoccupied) return;
-
-	auto OldEquippedWeapon = EquippedWeapon;
-	auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
-	EquipWeapon(NewWeapon);
-
-	OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
-	NewWeapon->SetItemState(EItemState::EIS_Equipped);
-
-	CombatState = ECombatState::ECS_Equipping;
-	
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if(AnimInstance && EquippedMontage)
+	if(CurrentItemIndex != NewItemIndex &&
+		NewItemIndex < Inventory.Num() &&
+		(CombatState == ECombatState::ECS_Unoccupied || CombatState == ECombatState::ECS_Equipping))
 	{
-		AnimInstance->Montage_Play(EquippedMontage, 1.0f);
-		AnimInstance->Montage_JumpToSection(FName("Equip"));
+		auto OldEquippedWeapon = EquippedWeapon;
+		auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
+		EquipWeapon(NewWeapon);
+
+		OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
+		NewWeapon->SetItemState(EItemState::EIS_Equipped);
+
+		CombatState = ECombatState::ECS_Equipping;
+	
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if(AnimInstance && EquippedMontage)
+		{
+			AnimInstance->Montage_Play(EquippedMontage, 1.0f);
+			AnimInstance->Montage_JumpToSection(FName("Equip"));
+		}
+		NewWeapon->PlayEquipSound(true);
 	}
-	NewWeapon->PlayEquipSound(true);
 }
 
 void AMazePlayer::OnekeyPressed()
