@@ -435,7 +435,7 @@ void AMazePlayer::PlayGunFireMontage()
 void AMazePlayer::InteractionBtnPressed()
 {
 	if(CombatState != ECombatState::ECS_Unoccupied) return;
-	if(TraceHitItem)
+	if(TraceHitItem && bShouldTraceForItems)
 	{
 		// 아이템 Z커브
 		TraceHitItem->StartItemCurve(this);
