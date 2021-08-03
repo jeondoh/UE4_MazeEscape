@@ -104,6 +104,7 @@ void AItem::InitalizedData()
 	FresnelExponent = 3.f;
 	FresnelReflectFraction = 4.f;
 	PulseCurveTime = 5.f;
+	SlotIndex = 0;
 }
 
 void AItem::SetSwtichStars()
@@ -193,6 +194,7 @@ void AItem::SetItemProperties(EItemState State)
 		// Mesh Properties 설정
 		ItemMesh->SetSimulatePhysics(true);
 		ItemMesh->SetEnableGravity(true);
+		ItemMesh->SetVisibility(true);
 		ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		ItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
@@ -217,8 +219,22 @@ void AItem::SetItemProperties(EItemState State)
 		// CollisionBox Properties 설정
 		CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		break;	
-		
+		break;
+	case EItemState::EIS_PickedUp:
+		PickupWidget->SetVisibility(false);
+		// Mesh Properties 설정
+		ItemMesh->SetSimulatePhysics(false);
+		ItemMesh->SetEnableGravity(false);
+		ItemMesh->SetVisibility(false);
+		ItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		// AreaSphere Properties 설정
+		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		// CollisionBox Properties 설정
+		CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;			
 	default:
 		;
 	}
@@ -415,7 +431,6 @@ void AItem::FinishInterping()
 		InterpPlayer->GetPickupItem(this);
 		// Item Count 1감소
 		InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, -1);
-		SetItemState(EItemState::EIS_PickedUp);
 	}
 	SetActorScale3D(FVector(1.f));
 	// Glow 효과 disabled 

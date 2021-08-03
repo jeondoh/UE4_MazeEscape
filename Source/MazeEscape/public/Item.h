@@ -263,6 +263,25 @@ private:
 	virtual void InitializeCustomDepth();
 
 	/**************************************************************************************************/
+	/* 인벤토리 */
+
+	// 인벤토리 슬롯별 뒷배경
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
+	UTexture2D* IconBackground;
+
+	// 인벤토리 아이템 아이콘
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
+	UTexture2D* IconItem;
+
+	// 인벤토리 탄약 아이콘
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
+	UTexture2D* AmmoItem;
+
+	// 인벤토리 배열 Index
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
+	int32 SlotIndex;
+	
+	/**************************************************************************************************/
 	
 // Getter & Setter
 public:
@@ -278,5 +297,9 @@ public:
 
 	FORCEINLINE int32 GetItemCount() const {return ItemCount;}
 
+	FORCEINLINE int32 GetSlotIndex() const {return SlotIndex;}
+	FORCEINLINE void SetSlotIndex(int32 Index) {SlotIndex = Index;}
+
+	
 
 };

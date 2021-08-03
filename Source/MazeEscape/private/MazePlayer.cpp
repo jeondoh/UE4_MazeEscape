@@ -63,6 +63,9 @@ void AMazePlayer::BeginPlay()
 	}
 	// Default 무기 지정 Socket에 부착
 	EquipWeapon(SpawnDefaultWeapon());
+	// 인벤토리에 무기 넣기
+	Inventory.Add(EquippedWeapon);
+	EquippedWeapon->SetSlotIndex(0);
 	// 아이템 테두리 GLow 효과
 	EquippedWeapon->DisableCustomDepth();
 	EquippedWeapon->DisableGlowMaterial();
@@ -163,9 +166,14 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("AimingButton", IE_Pressed, this, &AMazePlayer::AimingButtonPressed);
 	PlayerInputComponent->BindAction("AimingButton", IE_Released, this, &AMazePlayer::AimingButtonReleased);
 	PlayerInputComponent->BindAction("Interaction", IE_Pressed, this, &AMazePlayer::InteractionBtnPressed);
-	PlayerInputComponent->BindAction("Interaction", IE_Released, this, &AMazePlayer::InteractionBtnRelease);
+	PlayerInputComponent->BindAction("Interaction", IE_Released, this, &AMazePlayer::InteractionBtnReleased);
 	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMazePlayer::ReloadButtonPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMazePlayer::CrouchButtonPressed);
+
+	PlayerInputComponent->BindAction("1key", IE_Pressed, this, &AMazePlayer::OnekeyPressed);
+	PlayerInputComponent->BindAction("2key", IE_Pressed, this, &AMazePlayer::TwokeyPressed);
+	PlayerInputComponent->BindAction("3key", IE_Pressed, this, &AMazePlayer::ThreekeyPressed);
+	PlayerInputComponent->BindAction("4key", IE_Pressed, this, &AMazePlayer::FourkeyPressed);
 	
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMazePlayer::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMazePlayer::MoveRight);
@@ -182,11 +190,21 @@ void AMazePlayer::GetPickupItem(AItem* Item)
 	{
 		Item->PlayEquipSound();
 	}
-	
 	AWeapon* Weapon = Cast<AWeapon>(Item);
 	if(Weapon)
 	{
-		SwapWeapon(Weapon);
+		// 인벤토리에 자리가 있다면
+		if(Inventory.Num() < INVENTORY_CAPACITY)
+		{
+			Weapon->SetSlotIndex(Inventory.Num()); // 인벤토리 Array에 Index설정
+			Inventory.Add(Weapon);
+			Weapon->SetItemState(EItemState::EIS_PickedUp);
+		}
+		else
+		{
+			// 인벤토리가 가득 차있다면 무기스왑
+			SwapWeapon(Weapon);
+		}
 	}
 	AAmmo* Ammo = Cast<AAmmo>(Item);
 	if(Ammo)
@@ -416,15 +434,17 @@ void AMazePlayer::PlayGunFireMontage()
 
 void AMazePlayer::InteractionBtnPressed()
 {
+	if(CombatState != ECombatState::ECS_Unoccupied) return;
 	if(TraceHitItem)
 	{
 		// 아이템 Z커브
 		TraceHitItem->StartItemCurve(this);
+		TraceHitItem = nullptr;
 	}
 	
 }
 
-void AMazePlayer::InteractionBtnRelease()
+void AMazePlayer::InteractionBtnReleased()
 {
 }
 
@@ -540,6 +560,10 @@ void AMazePlayer::TraceForItems()
 		if(ItemTraceResult.bBlockingHit)
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.Actor);
+			if(TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
+			{
+				TraceHitItem = nullptr;
+			}
 			if(TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
 				TraceHitItem->GetPickupWidget()->SetVisibility(true);
@@ -585,6 +609,16 @@ void AMazePlayer::EquipWeapon(AWeapon* WeaponToEquip)
 			// 해당 소켓에 무기 부착
 			HandSocket->AttachActor(WeaponToEquip, GetMesh());
 		}
+		if(EquippedWeapon == nullptr)
+		{
+			// -1 = 장착한 무기 없음. 아이콘 애니메이션 필요 X
+			EquipItemDelegate.Broadcast(-1, WeaponToEquip->GetSlotIndex());
+		}
+		else
+		{
+			EquipItemDelegate.Broadcast(EquippedWeapon->GetSlotIndex(), WeaponToEquip->GetSlotIndex());
+		}
+		
 		EquippedWeapon = WeaponToEquip;
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
 	}
@@ -604,6 +638,11 @@ void AMazePlayer::DropWeapon()
 
 void AMazePlayer::SwapWeapon(AWeapon* WeaponToSwap)
 {
+	if(Inventory.Num() -1 >= EquippedWeapon->GetSlotIndex())
+	{
+		Inventory[EquippedWeapon->GetSlotIndex()] = WeaponToSwap;
+		WeaponToSwap->SetSlotIndex(EquippedWeapon->GetSlotIndex());
+	}
 	DropWeapon();
 	EquipWeapon(WeaponToSwap);
 	TraceHitItem = nullptr;
@@ -904,4 +943,43 @@ void AMazePlayer::MoveRight(float Value)
 		const FVector Direction{FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)};
 		AddMovementInput(Direction, Value);
 	}
+}
+
+void AMazePlayer::ExchangeInventoryItems(int32 CurrentItemIndex, int32 NewItemIndex)
+{
+	if(CurrentItemIndex == NewItemIndex || NewItemIndex >= Inventory.Num()
+		|| CombatState != ECombatState::ECS_Unoccupied) return;
+
+	auto OldEquippedWeapon = EquippedWeapon;
+	auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
+	EquipWeapon(NewWeapon);
+
+	OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
+	NewWeapon->SetItemState(EItemState::EIS_Equipped);
+}
+
+void AMazePlayer::OnekeyPressed()
+{
+	KeyPressedToEquipped(0);
+}
+
+void AMazePlayer::TwokeyPressed()
+{
+	KeyPressedToEquipped(1);
+}
+
+void AMazePlayer::ThreekeyPressed()
+{
+	KeyPressedToEquipped(2);
+}
+
+void AMazePlayer::FourkeyPressed()
+{
+	KeyPressedToEquipped(3);
+}
+
+void AMazePlayer::KeyPressedToEquipped(int32 SlotIndex)
+{
+	if(EquippedWeapon->GetSlotIndex() == SlotIndex) return;
+	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), SlotIndex);
 }
