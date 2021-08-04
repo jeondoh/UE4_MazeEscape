@@ -463,13 +463,19 @@ private:
 	
 	/**************************************************************************************************/
 	/* 스왑 */
-
 	void ExchangeInventoryItems(int32 CurrentItemIndex, int32 NewItemIndex);
 	void OnekeyPressed();
 	void TwokeyPressed();
 	void ThreekeyPressed();
 	void FourkeyPressed();
 	void KeyPressedToEquipped(int32 SlotIndex);
+
+	/**************************************************************************************************/
+	/** 발소리 **/
+
+	UFUNCTION(BlueprintCallable)
+	void FootStep();
+	
 
 	/**************************************************************************************************/
 

@@ -1080,3 +1080,14 @@ void AMazePlayer::KeyPressedToEquipped(int32 SlotIndex)
 	if(EquippedWeapon->GetSlotIndex() == SlotIndex) return;
 	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), SlotIndex);
 }
+
+void AMazePlayer::FootStep()
+{
+	FHitResult HitResult;
+	const FVector Start{GetActorLocation()};
+	const FVector End{Start + FVector(0.f, 0.f, -400.f)};
+	FCollisionQueryParams QueryParams;
+	QueryParams.bReturnPhysicalMaterial = true;
+	// 발이 닿이는 actor 추적
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParams);
+}
