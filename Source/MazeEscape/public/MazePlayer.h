@@ -236,8 +236,6 @@ private:
 	bool bFireButtonPressed;
 	// 총 발사 여부
 	// bool bShouldFire;
-	// 자동발사 사격속도(간격)
-	float AutomaticFireRate;
 	// 사격 사이 타이머 설정
 	FTimerHandle AutoFireTimer;
 	// Interaction key 상호작용 키
@@ -266,12 +264,6 @@ private:
 	/**************************************************************************************************/
 	/** 효과 (사운드/파티클) **/
 
-	// 총소리 10개 랜덤 재생
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Sounds", meta = (AllowPrivateAccess=true))
-	class USoundCue* FireSound;
-	// 스켈레톤 > 무기 > BarrelSocket 발사 효과
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Particles", meta = (AllowPrivateAccess=true))
-	class UParticleSystem* MuzzleFlash;
 	// 총알 충돌시 효과
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Particles", meta = (AllowPrivateAccess=true))
 	class UParticleSystem* ImpactParticle;
@@ -316,7 +308,7 @@ private:
 	/**************************************************************************************************/
 	/** 아이템  **/
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData", meta = (AllowPrivateAccess=true))
 	class AItem* TraceHitItemLastFrame;
 	
 	// 아이템 추적
@@ -359,15 +351,15 @@ private:
 	class USoundCue* EmptyBulletSound;
 	
 	// 탄약 저장 TMAP
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|Ammo", meta=(AllowPrivateAccess=true))
 	TMap<EAmmoType, int32> AmmoMap;
 
 	// 시작 9mm 탄약
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ItemData|Ammo", meta=(AllowPrivateAccess=true))
 	int32 Starting9mmAmmo;
 
 	// 시작 AR 탄약
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Ammo", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ItemData|Ammo", meta=(AllowPrivateAccess=true))
 	int32 StartingARAmmo;
 
 	// AmmoMap 초기화
@@ -392,38 +384,38 @@ private:
 	// 탄약 확인
 	bool CarryingAmo();
 	// 탄창 Transform(위치, 회전, 스케일)
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Ammo", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|Ammo", meta = (AllowPrivateAccess=true))
 	FTransform ClipTransfrom;
 	// Scene Component 재장전 중 캐릭터 손에 탄창 부착
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* HandSceneComponent;
 
 	/**************************************************************************************************/
 	/* interp시 위치 설정 */
 
 	// 무기 위치 설정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* WeaponInterpComp;
 	// 탄약 위치 설정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* InterpComp1;
 	// 탄약 위치 설정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* InterpComp2;
 	// 탄약 위치 설정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* InterpComp3;
 	// 탄약 위치 설정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* InterpComp4;
 	// 탄약 위치 설정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* InterpComp5;
 	// 탄약 위치 설정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	USceneComponent* InterpComp6;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|Ammo|Scene", meta = (AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|Ammo|Scene", meta = (AllowPrivateAccess=true))
 	TArray<FInterpLocation> InterpLocations;
 
 	void InitalizeInterpLocations();
@@ -436,10 +428,10 @@ private:
 	// 무기 획득 사운드 여부
 	bool bShouldPlayEquipSound;
 	// 아이템 줍기 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Sound|Timer", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ItemData|Sound|Timer", meta=(AllowPrivateAccess=true))
 	float PickUpSoundResetTime;
 	// 무기 획득 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Sound|Timer", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="ItemData|Sound|Timer", meta=(AllowPrivateAccess=true))
 	float EquipSoundResetTime;
 
 	UFUNCTION()
@@ -450,18 +442,18 @@ private:
 	/**************************************************************************************************/
     /* 인벤토리 */
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Inventory", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|Inventory", meta=(AllowPrivateAccess=true))
 	TArray<AItem*> Inventory;
 	// 인벤토리 무기 개수
 	const int32 INVENTORY_CAPACITY{4};
 	// 인벤토리에 슬롯 정보 전송(장비장착할때)
-	UPROPERTY(BlueprintAssignable, Category="Settings|Inventory|Delegates", meta=(AllowPrivateAccess=true))
+	UPROPERTY(BlueprintAssignable, Category="ItemData|Inventory|Delegates", meta=(AllowPrivateAccess=true))
 	FEquipItemDelegate EquipItemDelegate;
 	// 인벤토리 빈공간에 하이라이트 애니메이션 효과 지정 역활
-	UPROPERTY(BlueprintAssignable, Category="Settings|Inventory|Delegates", meta=(AllowPrivateAccess=true))
+	UPROPERTY(BlueprintAssignable, Category="ItemData|Inventory|Delegates", meta=(AllowPrivateAccess=true))
 	FHighlightIconDelegate HighlightIconDelegate;
 	// 강조 표시(애니메이션)된 슬롯의 인덱스
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Settings|Inventory|Delegates", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|Inventory|Delegates", meta=(AllowPrivateAccess=true))
 	int32 HighlightedSlot;
 	// 빈 인벤토리 인덱스 가져오기
 	int32 GetEmptyInventorySlot();

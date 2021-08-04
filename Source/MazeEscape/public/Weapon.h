@@ -46,6 +46,39 @@ struct FWeaponDataTable : public FTableRowBase
 	// 메테리얼 인덱스
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaterialIndex;
+	// 탄창 스켈레톤 이름(재장전 탄창 분리시에 필요)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName ClipBoneName;
+	// 재장전 몽타주 이름
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName ReloadMontageSection;
+	// 애니메이션
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UAnimInstance> AnimBP;
+	// 조준선 중앙
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CrosshairsMiddle;
+	// 조준선 왼쪽
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CrosshairsLeft;
+	// 조준선 오른쪽
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CrosshairsRight;
+	// 조준선 아래
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CrosshairsBottom;
+	// 조준선 위
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* CrosshairsTop;
+	// 자동발사 속도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float AutoFireRate;
+	// 사격시 효과
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UParticleSystem* MuzzleFlash;
+	// 사격 사운드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USoundCue* FireSound;
 };
 
 /**
@@ -117,12 +150,37 @@ private:
 	/**************************************************************************************************/
 	/* 무기 데이터테이블 */
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Settings|DataTable", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
 	UDataTable* WeaponDataTable;
 
 	// 이전 메테리얼 인덱스값
 	int32 PreviousMaterialIndex;
-	
+
+	// 조준선 중앙
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	UTexture2D* CrosshairsMiddle;
+	// 조준선 왼쪽
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	UTexture2D* CrosshairsLeft;
+	// 조준선 오른쪽
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	UTexture2D* CrosshairsRight;
+	// 조준선 아래
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	UTexture2D* CrosshairsBottom;
+	// 조준선 위
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	UTexture2D* CrosshairsTop;
+	// 사격시 효과
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	class UParticleSystem* MuzzleFlash;
+	// 사격 사운드
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	USoundCue* FireSound;
+	// 자동발사 속도
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="ItemData|DataTable", meta=(AllowPrivateAccess=true))
+	float AutoFireRate;
+
 	void SetWeaponDataTable();
 
 	/**************************************************************************************************/
@@ -133,7 +191,18 @@ public:
 	FORCEINLINE int32 GetMagazineCapacity() const {return MagazineCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EAmmoType GetAmmoType() const {return AmmoType;}
+
 	FORCEINLINE FName GetReloadMontageSection() const {return ReloadMontageSection;}
+	FORCEINLINE void SetReloadMontageSection(FName Name) {ReloadMontageSection = Name;}
+	
 	FORCEINLINE FName GetClipBoneName() const {return ClipBoneName;}
+	FORCEINLINE void SetClipBoneName(FName Name) {ClipBoneName = Name;}
+	
 	FORCEINLINE void SetClipBoneName(bool Move) {bMovingClip = Move;}
+
+	FORCEINLINE float GetAutoFireRate() const {return AutoFireRate;}
+	
+	FORCEINLINE UParticleSystem* GetMuzzleFlash() const {return MuzzleFlash;}
+
+	FORCEINLINE USoundCue* GetFireSound() const {return FireSound;}
 };

@@ -105,11 +105,24 @@ void AWeapon::SetWeaponDataTable()
 			SetItemName(WeaponDataRow->ItemName);
 			SetIconItem(WeaponDataRow->InventoryIcon);
 			SetAmmoIcon(WeaponDataRow->AmmoIcon);
+			SetClipBoneName(WeaponDataRow->ClipBoneName);
 			SetMaterialInstance(WeaponDataRow->MaterialInstance);
+			SetReloadMontageSection(WeaponDataRow->ReloadMontageSection);
+			GetItemMesh()->SetAnimInstanceClass(WeaponDataRow->AnimBP);
 			// 메테리얼 초기화 후 적용
 			PreviousMaterialIndex = GetMaterialIndex();
 			GetItemMesh()->SetMaterial(PreviousMaterialIndex, nullptr);
 			SetMaterialIndex(WeaponDataRow->MaterialIndex);
+			// 조준선 설정 
+			CrosshairsMiddle = WeaponDataRow->CrosshairsMiddle;
+            CrosshairsLeft = WeaponDataRow->CrosshairsLeft;
+            CrosshairsRight = WeaponDataRow->CrosshairsRight;
+            CrosshairsBottom = WeaponDataRow->CrosshairsBottom;
+            CrosshairsTop = WeaponDataRow->CrosshairsTop;
+			// 사격효과 설정
+			MuzzleFlash = WeaponDataRow->MuzzleFlash;
+			FireSound = WeaponDataRow->FireSound;
+			AutoFireRate = WeaponDataRow->AutoFireRate;
 		}
 	}
 	// GLOW 메테리얼 효과

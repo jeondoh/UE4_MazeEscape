@@ -26,6 +26,8 @@ UMazePlayerAnimInstance::UMazePlayerAnimInstance()
 	CharacterRotationLastFrame = FRotator(0.f);
 	RecoilWeight = 0.f;
 	bTurningInPlace = false;
+	EquippedWeaponType = EWeaponType::EWT_MAX;
+	bShouldUseFABRIK = false;
 }
 
 void UMazePlayerAnimInstance::UpdateAnimationProperties(float DeltaTime)
@@ -149,12 +151,15 @@ void UMazePlayerAnimInstance::Lean(float DeltaTime)
 
 void UMazePlayerAnimInstance::CharacterStateUpdate()
 {
+	ECombatState CombatState = MazePlayer->GetCombatState();
 	// 재장전여부
-	bReloading = MazePlayer->GetCombatState() == ECombatState::ECS_Reloading;
+	bReloading = CombatState == ECombatState::ECS_Reloading;
 	// 웅크리기 여부
 	bCrouching = MazePlayer->GetCrouching();
 	// 장비착용 여부
-	bEquipping = MazePlayer->GetCombatState() == ECombatState::ECS_Equipping;
+	bEquipping = CombatState == ECombatState::ECS_Equipping;
+	// FABRIK 사용여부
+	bShouldUseFABRIK = CombatState == ECombatState::ECS_Unoccupied || CombatState == ECombatState::ECS_FireTimerInProgress;
 }
 
 void UMazePlayerAnimInstance::SetRecoilWeight()

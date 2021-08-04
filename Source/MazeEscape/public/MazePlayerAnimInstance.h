@@ -133,5 +133,9 @@ private:
 	// 무기종류
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat", meta=(AllowPrivateAccess=true))
 	EWeaponType EquippedWeaponType;
+
+	// FABRIK 사용여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Combat", meta=(AllowPrivateAccess=true))
+	bool bShouldUseFABRIK;
 	
 };

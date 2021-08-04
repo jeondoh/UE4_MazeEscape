@@ -137,7 +137,6 @@ void AMazePlayer::InitalizedData()
 	/* 자동사격 */
 	// bShouldFire = true; // 총 발사 여부
 	bFireButtonPressed = false; // 왼쪽 마우스 클릭 여부
-	AutomaticFireRate = 0.2f; // 자동발사 사격속도(간격)
 	/* 아이템 */
 	bShouldTraceForItems = false; // 아이템 추적
 	/* 탄약 */	
@@ -380,9 +379,9 @@ void AMazePlayer::FireWeapon()
 void AMazePlayer::PlayFireSound()
 {
 	// 총알 발사 사운드
-	if(FireSound)
+	if(EquippedWeapon->GetFireSound())
 	{
-		UGameplayStatics::PlaySound2D(this, FireSound);
+		UGameplayStatics::PlaySound2D(this, EquippedWeapon->GetFireSound());
 	}
 }
 
@@ -393,9 +392,9 @@ void AMazePlayer::SendBullet()
 	if(BarrelSocket)
 	{
 		const FTransform SocketTransForm = BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh());
-		if(MuzzleFlash)
+		if(EquippedWeapon->GetMuzzleFlash())
 		{
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransForm);
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransForm);
 		}
 		// 총알 발사
 		FVector BeamEndPoint;
@@ -486,8 +485,9 @@ void AMazePlayer::FireButtonReleased()
 
 void AMazePlayer::StartFireTimer()
 {
+	if(EquippedWeapon == nullptr) return;
 	CombatState = ECombatState::ECS_FireTimerInProgress;
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMazePlayer::AutoFireReset, AutomaticFireRate);
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMazePlayer::AutoFireReset, EquippedWeapon->GetAutoFireRate());
 }
 
 void AMazePlayer::AutoFireReset()
