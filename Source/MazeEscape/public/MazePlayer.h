@@ -56,6 +56,8 @@ public:
 
 	// 입력 Bind
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
+	void StillAiming();
 
 	/**************************************************************************************************/
 	/** 아이템 획득 **/

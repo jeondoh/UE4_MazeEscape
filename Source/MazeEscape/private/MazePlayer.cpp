@@ -182,6 +182,14 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("LookUp", this, &AMazePlayer::LookUp);
 }
 
+void AMazePlayer::StillAiming()
+{
+	if(bAimingBUttonPressed)
+	{
+		Aim();
+	}
+}
+
 void AMazePlayer::GetPickupItem(AItem* Item)
 {
 	// 무기 장착 소리
@@ -225,7 +233,7 @@ void AMazePlayer::LookUpAtRate(float Rate)
 void AMazePlayer::AimingButtonPressed()
 {
 	bAimingBUttonPressed = true;
-	if(CombatState != ECombatState::ECS_Reloading)
+	if(CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping)
 	{
 		Aim();
 	}
@@ -373,6 +381,11 @@ void AMazePlayer::FireWeapon()
 		EquippedWeapon->DecrementAmmo();
 		// 자동사격
 		StartFireTimer();
+		// 권총일 경우 피스톨 움직이는 효과 적용
+		if(EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol)
+		{
+			EquippedWeapon->StartSlideTimer();
+		}
 	}
 }
 
@@ -436,6 +449,10 @@ void AMazePlayer::InteractionBtnPressed()
 	if(CombatState != ECombatState::ECS_Unoccupied) return;
 	if(TraceHitItem && bShouldTraceForItems)
 	{
+		if(bAiming)
+		{
+			StopAiming();
+		}
 		// 아이템 Z커브
 		TraceHitItem->StartItemCurve(this, true);
 		TraceHitItem = nullptr;
@@ -493,9 +510,10 @@ void AMazePlayer::StartFireTimer()
 void AMazePlayer::AutoFireReset()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	if(EquippedWeapon == nullptr) return;
 	if(WeaponHasAmmo())
 	{
-		if(bFireButtonPressed)
+		if(bFireButtonPressed && EquippedWeapon->GetAutomatic())
 		{
 			FireWeapon();			
 		}
@@ -528,6 +546,8 @@ void AMazePlayer::CrouchButtonPressed()
 void AMazePlayer::FinishEquipping()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
+	StillAiming();
 }
 
 bool AMazePlayer::TraceUnderCrosshairs(FHitResult& OutHitReuslt, FVector& OutHitLocation, float Multiply)
@@ -716,11 +736,8 @@ void AMazePlayer::FinishedReload()
 {
 	// AmmoMap 업데이트
 	CombatState = ECombatState::ECS_Unoccupied;
-
-	if(bAimingBUttonPressed)
-	{
-		Aim();
-	}
+	// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
+	StillAiming();
 	
 	if(EquippedWeapon == nullptr) return;
 
@@ -1015,6 +1032,10 @@ void AMazePlayer::ExchangeInventoryItems(int32 CurrentItemIndex, int32 NewItemIn
 		NewItemIndex < Inventory.Num() &&
 		(CombatState == ECombatState::ECS_Unoccupied || CombatState == ECombatState::ECS_Equipping))
 	{
+		if(bAiming)
+		{
+			StopAiming();
+		}
 		auto OldEquippedWeapon = EquippedWeapon;
 		auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
 		EquipWeapon(NewWeapon);

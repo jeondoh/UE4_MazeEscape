@@ -451,6 +451,8 @@ void AItem::FinishInterping()
 		InterpPlayer->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		// 인벤토리 효과
 		InterpPlayer->UnHighlightInventorySlot();
+		// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
+		InterpPlayer->StillAiming();
 	}
 	SetActorScale3D(FVector(1.f));
 	// Glow 효과 disabled 

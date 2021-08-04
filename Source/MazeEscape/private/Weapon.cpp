@@ -18,6 +18,21 @@ AWeapon::AWeapon()
 	AmmoType = EAmmoType::EAT_9mm;
 	ReloadMontageSection = FName(TEXT("Reload SMG"));
 	ClipBoneName = FName(TEXT("smg_clip"));
+	SlideDisplacement = 0.f;
+	SlideDisplacementTime = 0.2f;
+	bMovingSlide = false;
+	MaxSlideDisplacement = 3.f;
+	MaxRecoilRotation = 20.f;
+	bAutomatic = true;
+}
+
+void AWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+	if(BoneToHide != FName(""))
+	{
+		GetItemMesh()->HideBoneByName(BoneToHide, EPhysBodyOp::PBO_None);
+	}
 }
 
 void AWeapon::Tick(float DeltaSeconds)
@@ -29,7 +44,8 @@ void AWeapon::Tick(float DeltaSeconds)
 	{
 		const FRotator MeshRotation{0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f};
 		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
-	} 
+	}
+	UpdateSlideDisplacement();
 }
 
 void AWeapon::OnConstruction(const FTransform& Transform)
@@ -77,6 +93,23 @@ void AWeapon::StopFalling()
 	StartPulseTimer();
 }
 
+void AWeapon::UpdateSlideDisplacement()
+{
+	if(SlideDisplacementCurve && bMovingSlide)
+	{
+		// 경과시간
+		const float ElapsedTime{GetWorldTimerManager().GetTimerElapsed(SlideTimer)};
+		const float CurveValue{SlideDisplacementCurve->GetFloatValue(ElapsedTime)};
+		SlideDisplacement = CurveValue * MaxSlideDisplacement;
+		RecoilRotation = CurveValue * MaxRecoilRotation;
+	}
+}
+
+void AWeapon::FinishMovingSlide()
+{
+	bMovingSlide = false;
+}
+
 void AWeapon::SetWeaponDataTable()
 {
 	const FString WeaponTablePath{TEXT("DataTable'/Game/00_MazeDev/DataTable/WeaponDataTable.WeaponDataTable'")};
@@ -93,37 +126,11 @@ void AWeapon::SetWeaponDataTable()
 		case EWeaponType::EWT_AssaultRifle:
 			WeaponDataRow = WeaponTableObject->FindRow<FWeaponDataTable>(FName("AssaultRifle"), TEXT(""));			
 			break;
+		case EWeaponType::EWT_Pistol:
+			WeaponDataRow = WeaponTableObject->FindRow<FWeaponDataTable>(FName("Pistol"), TEXT(""));			
+			break;
 		}
-		if(WeaponDataRow)
-		{
-			AmmoType = WeaponDataRow->AmmoType;
-            Ammo = WeaponDataRow->WeaponAmmo;
-            MagazineCapacity = WeaponDataRow->MagazingCapacity;
-            SetPickupSound(WeaponDataRow->PickupSound); 
-            SetEquipSound(WeaponDataRow->EquipSound); 
-            GetItemMesh()->SetSkeletalMesh(WeaponDataRow->ItemMesh);
-			SetItemName(WeaponDataRow->ItemName);
-			SetIconItem(WeaponDataRow->InventoryIcon);
-			SetAmmoIcon(WeaponDataRow->AmmoIcon);
-			SetClipBoneName(WeaponDataRow->ClipBoneName);
-			SetMaterialInstance(WeaponDataRow->MaterialInstance);
-			SetReloadMontageSection(WeaponDataRow->ReloadMontageSection);
-			GetItemMesh()->SetAnimInstanceClass(WeaponDataRow->AnimBP);
-			// 메테리얼 초기화 후 적용
-			PreviousMaterialIndex = GetMaterialIndex();
-			GetItemMesh()->SetMaterial(PreviousMaterialIndex, nullptr);
-			SetMaterialIndex(WeaponDataRow->MaterialIndex);
-			// 조준선 설정 
-			CrosshairsMiddle = WeaponDataRow->CrosshairsMiddle;
-            CrosshairsLeft = WeaponDataRow->CrosshairsLeft;
-            CrosshairsRight = WeaponDataRow->CrosshairsRight;
-            CrosshairsBottom = WeaponDataRow->CrosshairsBottom;
-            CrosshairsTop = WeaponDataRow->CrosshairsTop;
-			// 사격효과 설정
-			MuzzleFlash = WeaponDataRow->MuzzleFlash;
-			FireSound = WeaponDataRow->FireSound;
-			AutoFireRate = WeaponDataRow->AutoFireRate;
-		}
+		SetWeaponDataRow(WeaponDataRow);
 	}
 	// GLOW 메테리얼 효과
 	if(GetMaterialInstance())
@@ -133,6 +140,48 @@ void AWeapon::SetWeaponDataTable()
 		GetItemMesh()->SetMaterial(GetMaterialIndex(), GetMaterialInstanceDynamic());
 		EnableGlowMaterial();
 	}
+}
+
+void AWeapon::SetWeaponDataRow(FWeaponDataTable* WeaponDataRow)
+{
+	if(WeaponDataRow)
+	{
+		AmmoType = WeaponDataRow->AmmoType;
+		Ammo = WeaponDataRow->WeaponAmmo;
+		MagazineCapacity = WeaponDataRow->MagazingCapacity;
+		SetPickupSound(WeaponDataRow->PickupSound); 
+		SetEquipSound(WeaponDataRow->EquipSound); 
+		GetItemMesh()->SetSkeletalMesh(WeaponDataRow->ItemMesh);
+		SetItemName(WeaponDataRow->ItemName);
+		SetIconItem(WeaponDataRow->InventoryIcon);
+		SetAmmoIcon(WeaponDataRow->AmmoIcon);
+		SetClipBoneName(WeaponDataRow->ClipBoneName);
+		SetMaterialInstance(WeaponDataRow->MaterialInstance);
+		SetReloadMontageSection(WeaponDataRow->ReloadMontageSection);
+		GetItemMesh()->SetAnimInstanceClass(WeaponDataRow->AnimBP);
+		BoneToHide = WeaponDataRow->BoneToHide;
+		bAutomatic = WeaponDataRow->bAutomatic;
+		// 메테리얼 초기화 후 적용
+		PreviousMaterialIndex = GetMaterialIndex();
+		GetItemMesh()->SetMaterial(PreviousMaterialIndex, nullptr);
+		SetMaterialIndex(WeaponDataRow->MaterialIndex);
+		// 조준선 설정 
+		CrosshairsMiddle = WeaponDataRow->CrosshairsMiddle;
+		CrosshairsLeft = WeaponDataRow->CrosshairsLeft;
+		CrosshairsRight = WeaponDataRow->CrosshairsRight;
+		CrosshairsBottom = WeaponDataRow->CrosshairsBottom;
+		CrosshairsTop = WeaponDataRow->CrosshairsTop;
+		// 사격효과 설정
+		MuzzleFlash = WeaponDataRow->MuzzleFlash;
+		FireSound = WeaponDataRow->FireSound;
+		AutoFireRate = WeaponDataRow->AutoFireRate;
+	}
+}
+
+void AWeapon::StartSlideTimer()
+{
+	bMovingSlide = true;
+	GetWorldTimerManager().SetTimer(SlideTimer, this, &AWeapon::FinishMovingSlide, SlideDisplacementTime);
 }
 
 bool AWeapon::ClipIsFull()

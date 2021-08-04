@@ -79,6 +79,12 @@ struct FWeaponDataTable : public FTableRowBase
 	// 사격 사운드
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USoundCue* FireSound;
+	// 뼈대 숨기기(권총 외)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName BoneToHide;
+	// 자동 사격 여부
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bAutomatic;
 };
 
 /**
@@ -103,7 +109,9 @@ public:
 	// 탄창용량확인
 	bool ClipIsFull();
 protected:
+	virtual void BeginPlay() override;
 	virtual void OnConstruction(const FTransform& Transform) override;
+
 	
 private:
 	/**************************************************************************************************/
@@ -146,6 +154,41 @@ private:
 	// 리로드 몽타주 색션 이름
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
 	FName ReloadMontageSection;
+
+	// 뼈대 숨기기(권총 외)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
+	FName BoneToHide;
+
+	// 권총 피스톨 움직임
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon|Ammo|Pistol", meta=(AllowPrivateAccess=true))
+	float SlideDisplacement;
+
+	// Curve > 권총 피스톨 움직임에 사용
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Weapon|Ammo|Pistol", meta=(AllowPrivateAccess=true))
+	UCurveFloat* SlideDisplacementCurve;
+	// 피스톨 타이머
+	FTimerHandle SlideTimer;
+	// 피스톨 움직임 시간
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Weapon|Ammo|Pistol", meta=(AllowPrivateAccess=true))
+	float SlideDisplacementTime;
+	// 피스톨 움직임 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Weapon|Ammo|Pistol", meta=(AllowPrivateAccess=true))
+	bool bMovingSlide;
+	// 피스톨 슬라이드 최대 거리
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo|Pistol", meta=(AllowPrivateAccess=true))
+	float MaxSlideDisplacement;
+    // 권총 반동 최대 회전수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo|Pistol", meta=(AllowPrivateAccess=true))	
+	float MaxRecoilRotation;
+	// 권총 반동 회전수
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo|Pistol", meta=(AllowPrivateAccess=true))
+	float RecoilRotation;
+	// 자동 발사 여부
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon", meta=(AllowPrivateAccess=true))
+	bool bAutomatic;
+
+	void UpdateSlideDisplacement();
+	void FinishMovingSlide();
 	
 	/**************************************************************************************************/
 	/* 무기 데이터테이블 */
@@ -183,6 +226,8 @@ private:
 
 	void SetWeaponDataTable();
 
+	void SetWeaponDataRow(FWeaponDataTable* WeaponDataRow);
+
 	/**************************************************************************************************/
 	
 // Getter & Setter	
@@ -205,4 +250,8 @@ public:
 	FORCEINLINE UParticleSystem* GetMuzzleFlash() const {return MuzzleFlash;}
 
 	FORCEINLINE USoundCue* GetFireSound() const {return FireSound;}
+
+	FORCEINLINE bool GetAutomatic() const {return bAutomatic;}
+
+	void StartSlideTimer();
 };
