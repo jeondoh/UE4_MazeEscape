@@ -14,6 +14,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Sound/SoundCue.h"
 
 // Sets default values
@@ -581,7 +582,7 @@ void AMazePlayer::TraceForItems()
 		// 무기에 에임을 대면 무기 위젯 활성화
 		FHitResult ItemTraceResult;
 		FVector OutHitLocation;
-		TraceUnderCrosshairs(ItemTraceResult, OutHitLocation, 400.f);
+		TraceUnderCrosshairs(ItemTraceResult, OutHitLocation, 1000.f);
 		if(ItemTraceResult.bBlockingHit)
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.Actor);
@@ -1081,7 +1082,7 @@ void AMazePlayer::KeyPressedToEquipped(int32 SlotIndex)
 	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), SlotIndex);
 }
 
-void AMazePlayer::FootStep()
+EPhysicalSurface AMazePlayer::GetSurfaceType()
 {
 	FHitResult HitResult;
 	const FVector Start{GetActorLocation()};
@@ -1090,4 +1091,6 @@ void AMazePlayer::FootStep()
 	QueryParams.bReturnPhysicalMaterial = true;
 	// 발이 닿이는 actor 추적
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParams);
+	// LineTrace로 추적되는 메테리얼의 표면을(Physical Surface) 알수 있음
+	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }

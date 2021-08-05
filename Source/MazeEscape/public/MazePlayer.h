@@ -474,7 +474,7 @@ private:
 	/** 발소리 **/
 
 	UFUNCTION(BlueprintCallable)
-	void FootStep();
+	EPhysicalSurface GetSurfaceType();
 	
 
 	/**************************************************************************************************/
