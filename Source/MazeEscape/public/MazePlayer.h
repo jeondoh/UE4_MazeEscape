@@ -244,7 +244,7 @@ private:
 	void InteractionBtnPressed();
 	void InteractionBtnReleased();
 	// 총알이 조준선(십자가) 방향으로 이동
-	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
+	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& BeamHitResult);
 	// 무기발사 (마우스 좌클릭)
 	void FireWeapon();
 	// 사격 소리
@@ -475,10 +475,14 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();
-	
 
 	/**************************************************************************************************/
+	/** 총 데미지 입히기 **/
 
+	// 추적 대상중 Enemy가 있으면 데미지를 입힘
+	void TraceEnemyToDamage(FHitResult BeamHitResult);
+
+	/**************************************************************************************************/
 // Getter & Setter
 public:
 	FORCEINLINE ECombatState GetCombatState() const {return CombatState;}

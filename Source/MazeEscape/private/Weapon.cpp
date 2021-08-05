@@ -175,6 +175,9 @@ void AWeapon::SetWeaponDataRow(FWeaponDataTable* WeaponDataRow)
 		MuzzleFlash = WeaponDataRow->MuzzleFlash;
 		FireSound = WeaponDataRow->FireSound;
 		AutoFireRate = WeaponDataRow->AutoFireRate;
+		// 총 피해량
+		Damage = WeaponDataRow->Damage;
+		HeadShotDamage = WeaponDataRow->HeadShotDamage;
 	}
 }
 

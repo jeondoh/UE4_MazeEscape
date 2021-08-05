@@ -4,7 +4,9 @@
 #include "MazePlayer.h"
 
 #include "Ammo.h"
+#include "BulletHitInterface.h"
 #include "DrawDebugHelpers.h"
+#include "Enemy.h"
 #include "Item.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -411,8 +413,32 @@ void AMazePlayer::SendBullet()
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransForm);
 		}
 		// 총알 발사
-		FVector BeamEndPoint;
-		bool bBeamEnd = GetBeamEndLocation(SocketTransForm.GetLocation(), BeamEndPoint);
+		FHitResult BeamHitResult;
+		bool bBeamEnd = GetBeamEndLocation(SocketTransForm.GetLocation(), BeamHitResult);
+		// 추적 성공시(물체가 있으면)
+		if(bBeamEnd)
+		{
+			// 추적 대상중에 BulletHit_Implementation 을 정의한 함수가 있으면 해당 함수 구현부로 이동하여 해당 파티클 실행
+			if (BeamHitResult.Actor.IsValid())
+			{
+				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.Actor.Get());
+				if (BulletHitInterface)
+				{
+					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+				}
+				// 추적 대상중 Enemy가 있으면 데미지를 입힘
+				TraceEnemyToDamage(BeamHitResult);
+			}
+			// 구현 함수가 없으면 기본 파티클 효과 적용
+			else
+			{
+				// BeamEndPoint에 총알 충돌시 효과 적용
+				if(ImpactParticle)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, BeamHitResult.Location);
+				}				
+			}
+		}
 		// 총알 발사 효과
 		if(BeamParticles)
 		{
@@ -420,18 +446,9 @@ void AMazePlayer::SendBullet()
 			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransForm.GetLocation());
 			if(Beam)
 			{
-				Beam->SetVectorParameter(FName("Target"), BeamEndPoint); // 이미터 > 타겟 > 타겟이름(Target)
+				Beam->SetVectorParameter(FName("Target"), BeamHitResult.Location); // 이미터 > 타겟 > 타겟이름(Target)
 			}
 		}
-		// 추적 성공시(물체가 있으면)
-		if(bBeamEnd)
-		{
-			// BeamEndPoint에 총알 충돌시 효과 적용
-			if(ImpactParticle)
-			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, BeamEndPoint);
-			}
-		} // end bBeamEnd
 	} // end BarrelSocket
 }
 
@@ -465,8 +482,9 @@ void AMazePlayer::InteractionBtnReleased()
 {
 }
 
-bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
+bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult)
 {
+	FVector OutBeamLocation;
 	FHitResult CrosshairHitResult;
 	bool bCrosshairHit = TraceUnderCrosshairs(CrosshairHitResult, OutBeamLocation, 50000.f);
 
@@ -477,17 +495,16 @@ bool AMazePlayer::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVecto
 	// 2번째 라인 추적 : 총구와 목표위치 사이의 물체 
 	// 물체가 총구와 BeamEndPoint 사이에 존재할때
 	// 조준한곳 사이에 물체가 있을때 EndPoint를 변경해준다.
-	FHitResult WeaponTraceHit;
 	const FVector WeaponTraceStart{MuzzleSocketLocation};
 	const FVector StartToEnd{OutBeamLocation - MuzzleSocketLocation};
 	const FVector WeaponTraceEnd{MuzzleSocketLocation + StartToEnd * 1.25f};
-	GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
-	if(WeaponTraceHit.bBlockingHit)
+	GetWorld()->LineTraceSingleByChannel(OutHitResult, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
+	if(!OutHitResult.bBlockingHit)
 	{
-		OutBeamLocation = WeaponTraceHit.Location;
-		return true;
+		OutHitResult.Location = OutBeamLocation;
+		return false;
 	}
-	return false;
+	return true;
 }
 
 void AMazePlayer::FireButtonPressed()
@@ -1093,4 +1110,18 @@ EPhysicalSurface AMazePlayer::GetSurfaceType()
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParams);
 	// LineTrace로 추적되는 메테리얼의 표면을(Physical Surface) 알수 있음
 	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
+}
+
+void AMazePlayer::TraceEnemyToDamage(FHitResult BeamHitResult)
+{
+	AEnemy* HitEnemy = Cast<AEnemy>(BeamHitResult.Actor.Get());
+	if(HitEnemy)
+	{
+		// 맞은 부위에 따라 다른 데미지 설정 (데미지는 데이터테이블에서 설정함)
+		FString BoneName = BeamHitResult.BoneName.ToString(); // 총알에 맞은 부위의 스켈레톤 명칭
+		FString CustomBoneName = HitEnemy->GetHeadBone(); // 사용자가 Enemy 블루프린트에서 설정한 뼈 이름(머리)
+		float Damage = BoneName == CustomBoneName ? EquippedWeapon->GetHeadShotDamage() : EquippedWeapon->GetDamage();
+		
+		UGameplayStatics::ApplyDamage(BeamHitResult.Actor.Get(), Damage, GetController(), this, UDamageType::StaticClass());
+	}
 }

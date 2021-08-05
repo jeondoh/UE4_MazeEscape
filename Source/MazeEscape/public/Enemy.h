@@ -48,5 +48,12 @@ private:
 	// 최대체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	float MaxHealth;
+	// 머리 스켈레톤 이름 (헤드샷을 위함)	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	FString HeadBone;
+
+// Getter & Setter
+public:
+	FORCEINLINE FString GetHeadBone() const {return HeadBone;}
 	
 };

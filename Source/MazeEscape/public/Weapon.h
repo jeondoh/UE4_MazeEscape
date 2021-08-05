@@ -85,6 +85,12 @@ struct FWeaponDataTable : public FTableRowBase
 	// 자동 사격 여부
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bAutomatic;
+	// 총알 피해량
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Damage;
+	// 총알 피해 > 헤드샷
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HeadShotDamage;
 };
 
 /**
@@ -229,6 +235,17 @@ private:
 	void SetWeaponDataRow(FWeaponDataTable* WeaponDataRow);
 
 	/**************************************************************************************************/
+	/* 무기 피해량 */
+
+	// 총알 피해량
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|State", meta=(AllowPrivateAccess=true))
+	float Damage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Weapon|State", meta=(AllowPrivateAccess=true))
+	// 헤드샷 피해량
+	float HeadShotDamage;
+
+	/**************************************************************************************************/
 	
 // Getter & Setter	
 public:
@@ -252,6 +269,9 @@ public:
 	FORCEINLINE USoundCue* GetFireSound() const {return FireSound;}
 
 	FORCEINLINE bool GetAutomatic() const {return bAutomatic;}
+
+	FORCEINLINE float GetDamage() const {return Damage;}
+	FORCEINLINE float GetHeadShotDamage() const {return HeadShotDamage;}
 
 	void StartSlideTimer();
 };
