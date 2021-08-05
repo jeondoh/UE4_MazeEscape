@@ -1121,7 +1121,10 @@ void AMazePlayer::TraceEnemyToDamage(FHitResult BeamHitResult)
 		FString BoneName = BeamHitResult.BoneName.ToString(); // 총알에 맞은 부위의 스켈레톤 명칭
 		FString CustomBoneName = HitEnemy->GetHeadBone(); // 사용자가 Enemy 블루프린트에서 설정한 뼈 이름(머리)
 		float Damage = BoneName == CustomBoneName ? EquippedWeapon->GetHeadShotDamage() : EquippedWeapon->GetDamage();
+		bool bHeadShot = BoneName == CustomBoneName ? true : false;
 		
 		UGameplayStatics::ApplyDamage(BeamHitResult.Actor.Get(), Damage, GetController(), this, UDamageType::StaticClass());
+		// 데미지 UI 보여주기
+		HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location, bHeadShot);
 	}
 }
