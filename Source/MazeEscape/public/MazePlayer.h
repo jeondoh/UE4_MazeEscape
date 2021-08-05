@@ -482,6 +482,9 @@ private:
 	// 추적 대상중 Enemy가 있으면 데미지를 입힘
 	void TraceEnemyToDamage(FHitResult BeamHitResult);
 
+	// 피해량 랜덤
+	float RandomizationDamage(float Damage, bool isHeadShot);
+
 	/**************************************************************************************************/
 // Getter & Setter
 public:

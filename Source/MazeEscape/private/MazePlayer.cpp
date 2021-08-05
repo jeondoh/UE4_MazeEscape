@@ -1120,11 +1120,20 @@ void AMazePlayer::TraceEnemyToDamage(FHitResult BeamHitResult)
 		// 맞은 부위에 따라 다른 데미지 설정 (데미지는 데이터테이블에서 설정함)
 		FString BoneName = BeamHitResult.BoneName.ToString(); // 총알에 맞은 부위의 스켈레톤 명칭
 		FString CustomBoneName = HitEnemy->GetHeadBone(); // 사용자가 Enemy 블루프린트에서 설정한 뼈 이름(머리)
-		float Damage = BoneName == CustomBoneName ? EquippedWeapon->GetHeadShotDamage() : EquippedWeapon->GetDamage();
 		bool bHeadShot = BoneName == CustomBoneName ? true : false;
+		float Damage = BoneName == CustomBoneName
+			? RandomizationDamage(EquippedWeapon->GetHeadShotDamage(), bHeadShot)
+			: RandomizationDamage(EquippedWeapon->GetDamage(), bHeadShot);
 		
 		UGameplayStatics::ApplyDamage(BeamHitResult.Actor.Get(), Damage, GetController(), this, UDamageType::StaticClass());
 		// 데미지 UI 보여주기
 		HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location, bHeadShot);
 	}
+}
+
+float AMazePlayer::RandomizationDamage(float Damage, bool isHeadShot)
+{
+	float Min = isHeadShot ? Damage - 5.f : Damage - 8.f;
+	float Max = isHeadShot ? Damage + 5.f : Damage + 3.f;
+	return FMath::RandRange(Min, Max);
 }
