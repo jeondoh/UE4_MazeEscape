@@ -16,6 +16,7 @@ enum class ECombatState : uint8
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
 	ECS_Equipping UMETA(DisplayName = "Equipping"),
+	ECS_Stunned UMETA(DisplayName = "Stunned"),
 
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
@@ -44,10 +45,13 @@ class MAZEESCAPE_API AMazePlayer : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AMazePlayer();
-	
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+		AController* EventInstigator, AActor* DamageCauser) override;
 
 // 함수선언
 public:	
@@ -58,6 +62,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
 	void StillAiming();
+	// 스턴상태
+	UFUNCTION()
+	void Stun();
 
 	/**************************************************************************************************/
 	/** 아이템 획득 **/
@@ -78,6 +85,18 @@ private:
 	/**************************************************************************************************/
 	/** 캐릭터 상태 **/
 
+	// 캐릭터 체력
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Health", meta = (AllowPrivateAccess=true))
+	float Health;
+	// 캐릭터 최대체력
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Health", meta = (AllowPrivateAccess=true))
+    float MaxHealth;
+	// 근접공격을 받았을때 사운드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Sound", meta = (AllowPrivateAccess=true))
+	class USoundCue* MeleeImpactSound;
+	// 공격받을때 파티클
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Particles", meta = (AllowPrivateAccess=true))
+	UParticleSystem* BloodParticles;
 	// 전투상태
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="State|Combat", meta=(AllowPrivateAccess=true))
 	ECombatState CombatState;
@@ -102,9 +121,21 @@ private:
 	// 웅크릴때의 바닥 마찰정도
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Speed", meta=(AllowPrivateAccess=true))
 	float CrouchGroundFriction;
-
+	// 스턴 확률
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="State|Health", meta=(AllowPrivateAccess=true))
+	float StunChance;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="State|Health", meta=(AllowPrivateAccess=true))
+	// 플레이어 스턴여부
+	bool bPlayerStunned;
+	// 스턴 상태 벗어남
+	UFUNCTION(BlueprintCallable)
+	void EndStun();
 	// 웅크리기/서있기의 캡슐 컴포넌트 크기 변화 Interp
 	void InterpCapsuleHalfHeight(float DeltaTime);
+	// 사망
+	void Die();
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
 	
 	/**************************************************************************************************/
 	/** 캐릭터 카메라 **/
@@ -142,6 +173,8 @@ private:
 	void LookUp(float Value);
 	// 점프
 	virtual void Jump() override;
+	// 플레이어 속도 재설정
+	void SetPlayerMovementIfCrouch();
 
 	/**************************************************************************************************/
 	/** 무기 에이밍(마우스 우클릭) **/
@@ -279,18 +312,21 @@ private:
 	// 총기 반동 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* HipFireMontage;
-
 	// 웅크리기 여부 (키보드 C키)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	bool bCrouching;
-
 	// 탄약 Reload 애니메이션 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* ReloadMontage;
-
 	// 무기스왑 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
 	class UAnimMontage* EquippedMontage;
+	// 적에게 데미지를 입을때 스턴 애니메이션
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
+	UAnimMontage* HitReactMontage;
+	// 사망 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat|Animate", meta = (AllowPrivateAccess=true))
+    UAnimMontage* DeathMontage;
 
 	void CrouchButtonPressed();
 
@@ -493,6 +529,11 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const {return FollowCamera;}
 	FORCEINLINE bool GetAiming() const {return bAiming;}
 	FORCEINLINE bool GetCrouching() const {return bCrouching;}
+
+	FORCEINLINE bool GetPlayerStunned() const {return bPlayerStunned;}
+	FORCEINLINE void SetPlayerStunned(bool Stunned) {bPlayerStunned = Stunned;}
+
+	FORCEINLINE float GetStunChance() const {return StunChance;}
 	
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCrosshairSpreadMultiplier() const {return CrosshairSpreadMultiplier;}
@@ -515,4 +556,9 @@ public:
 	void StartEquipSoundTimer();
 	
 	FORCEINLINE AWeapon* GetEquippedWeapon() const {return EquippedWeapon;}
+
+	FORCEINLINE USoundCue* GetMeleeImpactSound() const {return MeleeImpactSound;}
+	
+	FORCEINLINE UParticleSystem* GetBloodParticles() const {return BloodParticles;}
+
 };

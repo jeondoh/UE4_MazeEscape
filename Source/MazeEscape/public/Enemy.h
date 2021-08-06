@@ -21,6 +21,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void DoDamage(class AMazePlayer* Player);
+
+	void SpawnBlood(class AMazePlayer* Player, FName SocketName);
+	
 	void Die();
 	
 	void PlayHitMontage(FName Section, float PlayRate = 1.0f);
@@ -58,6 +62,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitNumber(int32 Damage, FVector HitLocation, bool bHeadShot);
 
+	UFUNCTION()
+	void DestoryEnemy();
+
 private:
 	// 변수 초기화
 	void InitalizedData();
@@ -74,6 +81,15 @@ private:
 	// 최대체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	float MaxHealth;
+	// 데미지
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	float BaseDamage;
+	// 좌측 무기 소켓명
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	FName LeftWeaponSocket;
+	// 좌측 무기 소켓명
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	FName RightWeaponSocket;
 	// 머리 스켈레톤 이름 (헤드샷을 위함)	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	FString HeadBone;
@@ -82,6 +98,13 @@ private:
 	float HealthBarDisplayTime;
 	// 체력바 타이머
 	FTimerHandle HealthBarTimer;
+	// 죽음여부
+	UPROPERTY(VisibleAnywhere, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	bool bDying;
+	// 죽은이후 일정 시간 이후 destory
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	float DeathTime;
+	FTimerHandle DeathTimer;
 	// 위젯 & 벡터 Array
 	UPROPERTY(VisibleAnywhere, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	TMap<UUserWidget*, FVector> HitNumbers;
@@ -90,11 +113,13 @@ private:
 	float HitNumberDestroyTime;
 	// HitNumbers에 저장된 데미지값 Enemy 위치에 보여주기
 	void UpdateHitNumbers();
+	// 피해량 랜덤
+	float RandomizationDamage(float Damage);
 
 	/**************************************************************************************************/
 	/** 애니메이션 **/
 
-	// 히트 / 사망 애니메이션이 포함된 몽타주
+	// 히트 애니메이션 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Animate", meta=(AllowPrivateAccess=true))
 	UAnimMontage* HitMontage;
 	// 히트 몽타주 간격 시간
@@ -106,6 +131,9 @@ private:
 	float HitReactTimeMin;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	float HitReactTimeMax;
+	// 사망 애니메이션 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Animate", meta=(AllowPrivateAccess=true))
+	UAnimMontage* DeathMontage;
 
 	// 공격 몽타주
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Animate", meta=(AllowPrivateAccess=true))
@@ -121,6 +149,9 @@ private:
 
 	UFUNCTION(BlueprintPure)
 	FName GetAttackSectionName();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
 
 	/**************************************************************************************************/
 	/** 인공지능 **/
@@ -144,6 +175,12 @@ private:
 	// 공격 범위
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Component", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
 	class USphereComponent* CombatRangeSphere;
+	// 우측 무기 Collision
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Enemy|Component", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	class UBoxComponent* LeftWeaponCollision;
+	// 좌측 무기 Collision
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Enemy|Component", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	class UBoxComponent* RightWeaponCollision;
 	// 히트 애니메이션 재생 여부
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
 	bool bStunned;
@@ -153,6 +190,14 @@ private:
 	// CombatRangeSphere에 따라 공격 여부
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
 	bool bInAttackRange;
+	// 공격가능 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	bool bCanAttack2;
+	// 공격 간격 시간
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	float AttackWaitTime2;
+	// 공격 간격 타이머
+	FTimerHandle AttackWaitTimer;
 	// AgroSphere에 오버랩 되었을때
 	UFUNCTION()
 	void AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -160,6 +205,10 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	void SetStunned(bool Stunned);
+	// 캐릭터 기절
+	void StunPlayer(AMazePlayer* Player);
+
+	void ResetCanAttack();
 
 	UFUNCTION()
 	void CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -167,7 +216,25 @@ private:
 	
 	UFUNCTION()
 	void CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+			
+	UFUNCTION()
+	void OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	// 무기 충돌 활성화/비활성화
+	UFUNCTION(BlueprintCallable)
+	void ActivateLeftWeapon();
+	UFUNCTION(BlueprintCallable)
+	void DeactivateLeftWeapon();
+	UFUNCTION(BlueprintCallable)
+	void ActivateRightWeapon();
+	UFUNCTION(BlueprintCallable)
+	void DeactivateRightWeapon();
 	/**************************************************************************************************/
 	
 // Getter & Setter

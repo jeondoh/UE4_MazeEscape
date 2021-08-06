@@ -7,7 +7,9 @@
 #include "BulletHitInterface.h"
 #include "DrawDebugHelpers.h"
 #include "Enemy.h"
+#include "EnemyController.h"
 #include "Item.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
@@ -100,6 +102,8 @@ void AMazePlayer::Tick(float DeltaTime)
 void AMazePlayer::InitalizedData()
 {
 	/* 캐릭터 상태 */
+	Health = 1000.f; // 캐릭터 체력
+	MaxHealth = 1000.f; // 캐릭터 최대체력
 	CurrentCapsuleHalfHeight = 300.f; // 캡슐 컴포넌트 높이 > 현재 크기
 	StandingCapsuleHalfHeight = 88.f; // 캡슐 컴포넌트 높이 > 서있을때 크기
 	CrouchingCapsuleHalfHeight = 44.f; // 캡슐 컴포넌트 높이 > 웅크릴때 크기
@@ -108,6 +112,8 @@ void AMazePlayer::InitalizedData()
 	CrouchMovementSpeed = 300.f; // 웅크릴때의 걸음속도
 	BaseGroundFriction = 4.f; // 평소 바닥 마찰정도
 	CrouchGroundFriction = 100.f; // 웅크릴때의 바닥 마찰정도
+	StunChance = 0.1f; // 스턴 확률
+	bPlayerStunned = false; // 플레이어 스턴여부
 	/* 카메라시야 */
 	CameraDefaultFOV = 0.f; // beginPlay에서 재정의 / 에이밍하지 않을때 카메라 시야
 	CameraCurrentFOV = 0.f; // beginPlay에서 재정의 / 카메라 현재 위치
@@ -185,6 +191,42 @@ void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("LookUp", this, &AMazePlayer::LookUp);
 }
 
+float AMazePlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Health -= DamageAmount;
+	if(Health <= 0.f)
+	{
+		Health = 0.f;
+		Die();
+
+		auto EnemyController = Cast<AEnemyController>(EventInstigator);
+		if(EnemyController)
+		{
+			EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("PlayerDead"), true);			
+		}
+	}
+	return DamageAmount;
+}
+
+void AMazePlayer::Die()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+	}
+}
+
+void AMazePlayer::FinishDeath()
+{
+	GetMesh()->bPauseAnims = true;
+	APlayerController* APC = UGameplayStatics::GetPlayerController(this, 0);
+	if(APC)
+	{
+		DisableInput(APC);
+	}
+}
+
 void AMazePlayer::StillAiming()
 {
 	if(bAimingBUttonPressed)
@@ -236,7 +278,7 @@ void AMazePlayer::LookUpAtRate(float Rate)
 void AMazePlayer::AimingButtonPressed()
 {
 	bAimingBUttonPressed = true;
-	if(CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping)
+	if(CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned)
 	{
 		Aim();
 	}
@@ -275,14 +317,31 @@ void AMazePlayer::LookUp(float Value)
 
 void AMazePlayer::Jump()
 {
+	if(!bPlayerStunned)
+	{
+		if(bCrouching)
+		{
+			bCrouching = false;
+			GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+			GetCharacterMovement()->GroundFriction = BaseGroundFriction;
+			return;
+		}
+		ACharacter::Jump();	
+	}
+}
+
+void AMazePlayer::SetPlayerMovementIfCrouch()
+{
 	if(bCrouching)
 	{
-		bCrouching = false;
+		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
+		GetCharacterMovement()->GroundFriction = CrouchGroundFriction;
+	}
+	else
+	{
 		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 		GetCharacterMovement()->GroundFriction = BaseGroundFriction;
-		return;
 	}
-	ACharacter::Jump();
 }
 
 void AMazePlayer::SetLookRate()
@@ -527,6 +586,8 @@ void AMazePlayer::StartFireTimer()
 
 void AMazePlayer::AutoFireReset()
 {
+	if(CombatState == ECombatState::ECS_Stunned) return;
+	
 	CombatState = ECombatState::ECS_Unoccupied;
 	if(EquippedWeapon == nullptr) return;
 	if(WeaponHasAmmo())
@@ -545,24 +606,19 @@ void AMazePlayer::AutoFireReset()
 
 void AMazePlayer::CrouchButtonPressed()
 {
-	if(!GetCharacterMovement()->IsFalling())
+	if(!bPlayerStunned)
 	{
-		bCrouching = !bCrouching;
-	}
-	if(bCrouching)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
-		GetCharacterMovement()->GroundFriction = CrouchGroundFriction;
-	}
-	else
-	{
-		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
-		GetCharacterMovement()->GroundFriction = BaseGroundFriction;
+		if(!GetCharacterMovement()->IsFalling())
+		{
+			bCrouching = !bCrouching;
+		}
+		SetPlayerMovementIfCrouch();		
 	}
 }
 
 void AMazePlayer::FinishEquipping()
 {
+	if(CombatState == ECombatState::ECS_Stunned) return;
 	CombatState = ECombatState::ECS_Unoccupied;
 	// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
 	StillAiming();
@@ -752,6 +808,8 @@ void AMazePlayer::ReloadWeapon()
 
 void AMazePlayer::FinishedReload()
 {
+	if(CombatState == ECombatState::ECS_Stunned) return;
+	
 	// AmmoMap 업데이트
 	CombatState = ECombatState::ECS_Unoccupied;
 	// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
@@ -957,6 +1015,32 @@ FInterpLocation AMazePlayer::GetInterpLocation(int32 Index)
 	return FInterpLocation();
 }
 
+void AMazePlayer::Stun()
+{
+	if(Health <= 0.f) return;
+	
+	CombatState = ECombatState::ECS_Stunned;
+
+	if(bAimingBUttonPressed)
+	{
+		StopAiming();
+	}
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+	}
+}
+
+void AMazePlayer::EndStun()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+	if(bAimingBUttonPressed)
+	{
+		Aim();
+	}
+}
+
 void AMazePlayer::InterpCapsuleHalfHeight(float DeltaTime)
 {
 	float TargetCapsuleHalfHeight{bCrouching ? CrouchingCapsuleHalfHeight : StandingCapsuleHalfHeight};
@@ -972,7 +1056,7 @@ void AMazePlayer::InterpCapsuleHalfHeight(float DeltaTime)
 
 void AMazePlayer::MoveForward(float Value)
 {
-	if(Controller != nullptr && Value != 0.0f)
+	if(Controller != nullptr && !bPlayerStunned && Value != 0.0f)
 	{
 		const FRotator Rotation{Controller->GetControlRotation()}; 
 		const FRotator YawRotation{FRotator(0, Rotation.Yaw, 0)};
@@ -984,7 +1068,7 @@ void AMazePlayer::MoveForward(float Value)
 
 void AMazePlayer::MoveRight(float Value)
 {
-	if(Controller != nullptr && Value != 0.0f)
+	if(Controller != nullptr && !bPlayerStunned && Value != 0.0f)
 	{
 		const FRotator Rotation{Controller->GetControlRotation()}; 
 		const FRotator YawRotation{FRotator(0, Rotation.Yaw, 0)};
@@ -1125,7 +1209,8 @@ void AMazePlayer::TraceEnemyToDamage(FHitResult BeamHitResult)
 			? RandomizationDamage(EquippedWeapon->GetHeadShotDamage(), bHeadShot)
 			: RandomizationDamage(EquippedWeapon->GetDamage(), bHeadShot);
 		
-		UGameplayStatics::ApplyDamage(BeamHitResult.Actor.Get(), Damage, GetController(), this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(BeamHitResult.Actor.Get(), Damage, GetController(),
+			this, UDamageType::StaticClass());
 		// 데미지 UI 보여주기
 		HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location, bHeadShot);
 	}
