@@ -82,18 +82,6 @@ private:
 	float HealthBarDisplayTime;
 	// 체력바 타이머
 	FTimerHandle HealthBarTimer;
-	// 히트 / 사망 애니메이션이 포함된 몽타주
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
-	UAnimMontage* HitMontage;
-	// 몽타주 간격 시간
-	FTimerHandle HitReactTimer;
-	// 몽타주 재생 여부
-	bool bCanHitReact;
-	// 히트 애니메이션 재생 간격
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
-	float HitReactTimeMin;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
-	float HitReactTimeMax;
 	// 위젯 & 벡터 Array
 	UPROPERTY(VisibleAnywhere, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	TMap<UUserWidget*, FVector> HitNumbers;
@@ -104,13 +92,84 @@ private:
 	void UpdateHitNumbers();
 
 	/**************************************************************************************************/
+	/** 애니메이션 **/
+
+	// 히트 / 사망 애니메이션이 포함된 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Animate", meta=(AllowPrivateAccess=true))
+	UAnimMontage* HitMontage;
+	// 히트 몽타주 간격 시간
+	FTimerHandle HitReactTimer;
+	// 히트 몽타주 재생 여부
+	bool bCanHitReact;
+	// 히트 애니메이션 재생 간격
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	float HitReactTimeMin;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	float HitReactTimeMax;
+
+	// 공격 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Animate", meta=(AllowPrivateAccess=true))
+	UAnimMontage* AttackMontage;
+	// 공격 몽타주 이름
+	FName AttackLFast;
+	FName AttackRFast;
+	FName AttackL;
+	FName AttackR;
+
+	UFUNCTION(BlueprintCallable)
+	void PlayAttackMontage(FName Section, float PlayRate);
+
+	UFUNCTION(BlueprintPure)
+	FName GetAttackSectionName();
+
+	/**************************************************************************************************/
 	/** 인공지능 **/
 
 	// Enemy의 행동 AI
-	UPROPERTY(EditAnywhere, Category="Enemy|Behavior Tree", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, Category="Enemy|BehaviorTree", meta=(AllowPrivateAccess=true))
 	class UBehaviorTree* BehaviorTree;
-	
+	// 적이 이동할 지점
+	// MakeEditWidget = 해당 엑터의 위치를 중심으로 한 로컬 위치
+	UPROPERTY(EditAnywhere, Category="Enemy|BehaviorTree", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	FVector PatrolPoint;
+	UPROPERTY(EditAnywhere, Category="Enemy|BehaviorTree", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	FVector PatrolPoint2;
+	UPROPERTY()
+	class AEnemyController* EnemyController;
+	// Enemy 클래스 AI 설정
+	void SetEnemyAIController();
+	// 어그로 범위
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Component", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	class USphereComponent* AgroSphere;
+	// 공격 범위
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Component", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	class USphereComponent* CombatRangeSphere;
+	// 히트 애니메이션 재생 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	bool bStunned;
+	// 기절할 수치(확률) 0 : 스턴 X  1 : 스턴 O
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	float StunChance;
+	// CombatRangeSphere에 따라 공격 여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	bool bInAttackRange;
+	// AgroSphere에 오버랩 되었을때
+	UFUNCTION()
+	void AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION(BlueprintCallable)
+	void SetStunned(bool Stunned);
+
+	UFUNCTION()
+	void CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	
+	UFUNCTION()
+	void CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	/**************************************************************************************************/
+	
 // Getter & Setter
 public:
 	FORCEINLINE FString GetHeadBone() const {return HeadBone;}
