@@ -76,7 +76,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Sounds", meta=(AllowPrivateAccess=true))
 	class USoundCue* ImpactSound;
 	// 현재체력
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	float Health;
 	// 최대체력
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))

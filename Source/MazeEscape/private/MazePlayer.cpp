@@ -104,6 +104,7 @@ void AMazePlayer::InitalizedData()
 	/* 캐릭터 상태 */
 	Health = 1000.f; // 캐릭터 체력
 	MaxHealth = 1000.f; // 캐릭터 최대체력
+	bDead = false; // 캐릭터 죽음여부
 	CurrentCapsuleHalfHeight = 300.f; // 캡슐 컴포넌트 높이 > 현재 크기
 	StandingCapsuleHalfHeight = 88.f; // 캡슐 컴포넌트 높이 > 서있을때 크기
 	CrouchingCapsuleHalfHeight = 44.f; // 캡슐 컴포넌트 높이 > 웅크릴때 크기
@@ -210,6 +211,7 @@ float AMazePlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 
 void AMazePlayer::Die()
 {
+	bDead = true;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if(AnimInstance && DeathMontage)
 	{

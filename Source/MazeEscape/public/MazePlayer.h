@@ -127,6 +127,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="State|Health", meta=(AllowPrivateAccess=true))
 	// 플레이어 스턴여부
 	bool bPlayerStunned;
+	// 플레이어 사망여부
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="State|Health", meta=(AllowPrivateAccess=true))
+	bool bDead;
 	// 스턴 상태 벗어남
 	UFUNCTION(BlueprintCallable)
 	void EndStun();
