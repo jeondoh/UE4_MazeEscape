@@ -111,9 +111,8 @@ void AEnemy::InitalizedData()
 	DeathTime = 3.f;
 }
 
-void AEnemy::BulletHit_Implementation(FHitResult HitResult)
+void AEnemy::BulletHit_Implementation(FHitResult HitResult, AActor* Player, AController* InstigatorController)
 {
-	if(bDying) return;
 	// 사운드
 	if(ImpactSound)
 	{
@@ -124,16 +123,6 @@ void AEnemy::BulletHit_Implementation(FHitResult HitResult)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles,
 			HitResult.Location, FRotator(0.f), true);
-	}
-	// 적 체력바 보이기(쏘고나서 이후 HealthBarDisplayTime 동안만) 
-	ShowHealthBar();
-	// 확률적으로 애니메이션 재생 / 애니메이션 재생으로 인해 움직이지 못함(스턴)
-	const float Stunned = FMath::FRandRange(0.f, 1.f);
-	if(Stunned <= StunChance)
-	{
-		// 히트/사망 애니메이션 몽타주
-		PlayHitMontage(FName("HitReactFront"), 1.0f);
-		SetStunned(true);
 	}
 }
 
@@ -153,6 +142,18 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 		Health = 0.f;
 		Die();
 	}
+	if(bDying) return DamageAmount;
+	// 적 체력바 보이기(쏘고나서 이후 HealthBarDisplayTime 동안만) 
+	ShowHealthBar();
+	// 확률적으로 애니메이션 재생 / 애니메이션 재생으로 인해 움직이지 못함(스턴)
+	const float Stunned = FMath::FRandRange(0.f, 1.f);
+	if(Stunned <= StunChance)
+	{
+		// 히트/사망 애니메이션 몽타주
+		PlayHitMontage(FName("HitReactFront"), 1.0f);
+		SetStunned(true);
+	}
+	
 	return DamageAmount;
 }
 
@@ -307,9 +308,13 @@ void AEnemy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	if(OtherActor == nullptr) return;
 
 	auto Player = Cast<AMazePlayer>(OtherActor);
-	if(Player)
+	if(Player && EnemyController)
 	{
-		EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Player);		
+		if(EnemyController->GetBlackboardComponent())
+		{
+			EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Player);			
+		}
+				
 	}
 	
 }
@@ -319,7 +324,10 @@ void AEnemy::SetStunned(bool Stunned)
 	bStunned = Stunned;
 	if(EnemyController)
 	{
-		EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("Stunned"), Stunned);
+		if(EnemyController->GetBlackboardComponent())
+		{
+			EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("Stunned"), Stunned);
+		}
 	}
 }
 

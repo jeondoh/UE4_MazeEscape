@@ -485,7 +485,7 @@ void AMazePlayer::SendBullet()
 				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.Actor.Get());
 				if (BulletHitInterface)
 				{
-					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+					BulletHitInterface->BulletHit_Implementation(BeamHitResult, this, GetController());
 				}
 				// 추적 대상중 Enemy가 있으면 데미지를 입힘
 				TraceEnemyToDamage(BeamHitResult);

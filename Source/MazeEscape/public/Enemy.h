@@ -46,7 +46,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	// BulletHitInterface에서 Override
-	virtual void BulletHit_Implementation(FHitResult HitResult) override;
+	virtual void BulletHit_Implementation(FHitResult HitResult, AActor* Player, AController* InstigatorController) override;
 	
 	// 데미지 피해량
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
