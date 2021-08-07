@@ -19,5 +19,11 @@
 			"Name": "ApexDestruction",
 			"Enabled": true
 		}
+	],
+	"Plugins": [
+		{
+			"Name": "ApexDestruction",
+			"Enabled": true
+		}
 	]
 }
