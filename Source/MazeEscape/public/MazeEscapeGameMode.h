@@ -13,6 +13,16 @@ class AMazeEscapeGameMode : public AGameModeBase
 
 public:
 	AMazeEscapeGameMode();
+	
+protected:
+    virtual void BeginPlay() override;
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Widgets", meta=(AllowPrivateAccess=true))
+	TSubclassOf<class UUserWidget> HUDOverlayClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Widgets", meta=(AllowPrivateAccess=true))
+	UUserWidget* HUDOverlay;
 };
 
 
