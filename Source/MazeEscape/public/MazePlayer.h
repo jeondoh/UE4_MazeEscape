@@ -537,6 +537,8 @@ public:
 	FORCEINLINE void SetPlayerStunned(bool Stunned) {bPlayerStunned = Stunned;}
 
 	FORCEINLINE float GetStunChance() const {return StunChance;}
+
+	FORCEINLINE float GetCameraCurrentFOV() const {return CameraCurrentFOV;}
 	
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE float GetCrosshairSpreadMultiplier() const {return CrosshairSpreadMultiplier;}

@@ -45,6 +45,7 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 
 	AgroSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::AgroSphereOverlap);
+	AgroSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::AgroSphereEndOverlap);
 	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::CombatRangeOverlap);
 	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::CombatRangeEndOverlap);
 	LeftWeaponCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnLeftWeaponOverlap);
@@ -314,7 +315,22 @@ void AEnemy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 		{
 			EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Player);			
 		}
-				
+	}
+	
+}
+
+void AEnemy::AgroSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if(OtherActor == nullptr) return;
+
+	auto Player = Cast<AMazePlayer>(OtherActor);
+	if(Player && EnemyController)
+	{
+		if(EnemyController->GetBlackboardComponent())
+		{
+			EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), nullptr);			
+		}
 	}
 	
 }
