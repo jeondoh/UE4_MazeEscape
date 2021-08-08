@@ -110,10 +110,14 @@ void AEnemy::InitalizedData()
 	AttackWaitTime2 = 1.5f;
 	bDying = false;
 	DeathTime = 3.f;
+	IsDropItem = false;
+	IsDead = false;
 }
 
 void AEnemy::BulletHit_Implementation(FHitResult HitResult, AActor* Player, AController* InstigatorController)
 {
+	// Enemy 사망시 실행 X
+	if(IsDead) return;
 	// 사운드
 	if(ImpactSound)
 	{
@@ -140,6 +144,7 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 	if(Health <= 0.f)
 	{
+		IsDead = true;
 		Health = 0.f;
 		Die();
 	}
@@ -179,8 +184,11 @@ void AEnemy::Die()
 	if(EnemyController)
 	{
 		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("Death"), true);
+		EnemyController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), nullptr);
 		EnemyController->StopMovement();
 	}
+	// 아이템 드롭
+	DropItem();
 }
 
 void AEnemy::PlayHitMontage(FName Section, float PlayRate)
@@ -309,6 +317,7 @@ void AEnemy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	if(OtherActor == nullptr) return;
 
 	auto Player = Cast<AMazePlayer>(OtherActor);
+	
 	if(Player && EnemyController)
 	{
 		if(EnemyController->GetBlackboardComponent())
@@ -363,13 +372,14 @@ void AEnemy::StunPlayer(AMazePlayer* Player)
 
 void AEnemy::DoDamage(AMazePlayer* Player)
 {
+	if(Player->GetHealth() == 0) return;
+	
 	UGameplayStatics::ApplyDamage(Player, RandomizationDamage(BaseDamage), EnemyController, this, UDamageType::StaticClass());
 	// 스턴시에는 몽타주에서 사운드 실행
 	if(!Player->GetPlayerStunned() && Player->GetMeleeImpactSound())
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, Player->GetMeleeImpactSound(), GetActorLocation());
 	}
-	
 }
 
 void AEnemy::SpawnBlood(AMazePlayer* Player, FName SocketName)
@@ -466,5 +476,26 @@ void AEnemy::ResetCanAttack()
 	if(EnemyController)
 	{
 		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
+	}
+}
+
+void AEnemy::DropItem()
+{
+	if(IsDropItem && WeaponClass)
+	{
+		FActorSpawnParameters Param;
+		Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		const FVector ActorLocation = GetActorLocation();
+		FVector ItemLocation = FVector(ActorLocation.X, ActorLocation.Y, ActorLocation.Z + 70); 
+		
+		GetWorld()->SpawnActor<AWeapon>(WeaponClass,
+			ItemLocation,
+			GetActorRotation(), Param);
+		// 아이템 드롭 소리
+		if(DropSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, DropSound, ActorLocation);
+		}
 	}
 }

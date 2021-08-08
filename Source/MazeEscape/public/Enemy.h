@@ -111,6 +111,8 @@ private:
 	// 히트 위젯이 화면에서 제거되는 시간
 	UPROPERTY(EditAnywhere, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	float HitNumberDestroyTime;
+	// 몬스터 사망여부
+	bool IsDead;
 	// HitNumbers에 저장된 데미지값 Enemy 위치에 보여주기
 	void UpdateHitNumbers();
 	// 피해량 랜덤
@@ -239,6 +241,25 @@ private:
 	void ActivateRightWeapon();
 	UFUNCTION(BlueprintCallable)
 	void DeactivateRightWeapon();
+
+	/**************************************************************************************************/
+	/** 아이템 드롭 **/
+
+	// 무기 클래스
+	UPROPERTY(EditAnywhere, Category = "Enemy|PlayerWeapon", meta=(AllowPrivateAccess=true, MakeEditWidget=true)) 
+	TSubclassOf<class AWeapon> WeaponClass;
+
+	// 아이템 드롭 여부
+	UPROPERTY(EditAnywhere, Category = "Enemy|PlayerWeapon", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	bool IsDropItem;
+
+	// 아이템 드롭 사운드
+	UPROPERTY(EditAnywhere, Category = "Enemy|PlayerWeapon", meta=(AllowPrivateAccess=true, MakeEditWidget=true))
+	class USoundCue* DropSound;
+	
+	UFUNCTION()
+	void DropItem();
+	
 	/**************************************************************************************************/
 	
 // Getter & Setter
@@ -246,5 +267,7 @@ public:
 	FORCEINLINE FString GetHeadBone() const {return HeadBone;}
 	
 	FORCEINLINE UBehaviorTree* GetBehaviorTree() const {return BehaviorTree;}
+
+	FORCEINLINE bool GetIsDead() const {return IsDead;}
 	
 };

@@ -536,6 +536,8 @@ public:
 	FORCEINLINE bool GetPlayerStunned() const {return bPlayerStunned;}
 	FORCEINLINE void SetPlayerStunned(bool Stunned) {bPlayerStunned = Stunned;}
 
+	FORCEINLINE float GetHealth() const {return Health;}
+
 	FORCEINLINE float GetStunChance() const {return StunChance;}
 
 	FORCEINLINE float GetCameraCurrentFOV() const {return CameraCurrentFOV;}

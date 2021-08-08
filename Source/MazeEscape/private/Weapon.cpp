@@ -24,6 +24,8 @@ AWeapon::AWeapon()
 	MaxSlideDisplacement = 3.f;
 	MaxRecoilRotation = 20.f;
 	bAutomatic = true;
+	Damage = 0;
+	HeadShotDamage = 0;
 }
 
 void AWeapon::BeginPlay()
@@ -176,8 +178,8 @@ void AWeapon::SetWeaponDataRow(FWeaponDataTable* WeaponDataRow)
 		FireSound = WeaponDataRow->FireSound;
 		AutoFireRate = WeaponDataRow->AutoFireRate;
 		// 총 피해량
-		Damage = WeaponDataRow->Damage;
-		HeadShotDamage = WeaponDataRow->HeadShotDamage;
+		// Damage = WeaponDataRow->Damage;
+		// HeadShotDamage = WeaponDataRow->HeadShotDamage;
 	}
 }
 

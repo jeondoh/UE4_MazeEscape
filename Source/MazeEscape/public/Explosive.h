@@ -27,6 +27,7 @@ public:
 
 	/**************************************************************************************************/
 	/** 인터페이스 Override **/
+	UFUNCTION(BlueprintCallable)
 	virtual void BulletHit_Implementation(FHitResult HitResult, AActor* Player, AController* InstigatorController) override;
 
 private:

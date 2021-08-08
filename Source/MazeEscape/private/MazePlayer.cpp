@@ -1203,6 +1203,8 @@ void AMazePlayer::TraceEnemyToDamage(FHitResult BeamHitResult)
 	AEnemy* HitEnemy = Cast<AEnemy>(BeamHitResult.Actor.Get());
 	if(HitEnemy)
 	{
+		// 몬스터 죽으면 데미지 X
+		if(HitEnemy->GetIsDead()) return;
 		// 맞은 부위에 따라 다른 데미지 설정 (데미지는 데이터테이블에서 설정함)
 		FString BoneName = BeamHitResult.BoneName.ToString(); // 총알에 맞은 부위의 스켈레톤 명칭
 		FString CustomBoneName = HitEnemy->GetHeadBone(); // 사용자가 Enemy 블루프린트에서 설정한 뼈 이름(머리)

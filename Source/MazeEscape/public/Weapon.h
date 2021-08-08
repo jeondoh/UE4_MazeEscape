@@ -86,11 +86,11 @@ struct FWeaponDataTable : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bAutomatic;
 	// 총알 피해량
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Damage;
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	// float Damage;
 	// 총알 피해 > 헤드샷
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float HeadShotDamage;
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	// float HeadShotDamage;
 };
 
 /**
@@ -241,7 +241,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|State", meta=(AllowPrivateAccess=true))
 	float Damage;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Weapon|State", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|State", meta=(AllowPrivateAccess=true))
 	// 헤드샷 피해량
 	float HeadShotDamage;
 
