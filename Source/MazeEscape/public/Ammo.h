@@ -18,7 +18,6 @@ class MAZEESCAPE_API AAmmo : public AItem
 public:
 	AAmmo();
 
-	virtual void Tick(float DeltaTime) override;
 	/* 아이템 테두리 Glow 효과 파라메터 */
 	virtual void EnableCustomDepth() override;
 	virtual void DisableCustomDepth() override;

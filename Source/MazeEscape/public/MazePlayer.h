@@ -59,6 +59,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// 입력 Bind
+	UFUNCTION(BlueprintCallable)
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// 마우스 우측 버튼 클릭하고 있으면 에이밍 지속
 	void StillAiming();
@@ -68,7 +69,7 @@ public:
 
 	/**************************************************************************************************/
 	/** 아이템 획득 **/
-	
+
 	void GetPickupItem(AItem* Item);
 
 	/**************************************************************************************************/
@@ -76,6 +77,27 @@ public:
 	
 	void HighlightInventorySlot();
 	void UnHighlightInventorySlot();
+	
+	/**************************************************************************************************/
+	/** 레벨저장 **/
+	
+	UFUNCTION(BlueprintCallable)
+	void SaveGame();
+
+	UFUNCTION(BlueprintCallable)
+	void LoadGame();
+
+	UFUNCTION(BlueprintCallable)
+	void DeleteGame();
+	
+	UPROPERTY(EditDefaultsOnly, Category="SaveData")
+	TSubclassOf<class AItemStorage> WeaponStorge;
+
+	UFUNCTION(BlueprintCallable)
+	void OpenLevel(FName LevelName);
+
+	UFUNCTION(BlueprintCallable)
+	void SwitchLevel(FName LevelName);
 	
 private:
 
@@ -524,7 +546,41 @@ private:
 	// 피해량 랜덤
 	float RandomizationDamage(float Damage, bool isHeadShot);
 
+
 	/**************************************************************************************************/
+	/* 레벨 1 열쇠 */
+
+	// 열쇠1
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bKey1;
+	// 열쇠2
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bKey2;
+	// 열쇠3
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bKey3;
+	// 열쇠4
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bKey4;
+	// 포탈키1
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bPotalKey1;
+	// 포탈키2
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bPotalKey2;
+	// 포탈키3
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bPotalKey3;
+	// 최종 포탈키
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Level1|Keys", meta=(AllowPrivateAccess))
+	bool bPotalKey;
+
+	// 1번문 열어주세요
+	UFUNCTION(BlueprintCallable)
+	bool KeyDoorOpen(FString KeyName, bool key);
+	
+	/**************************************************************************************************/
+	
 // Getter & Setter
 public:
 	FORCEINLINE ECombatState GetCombatState() const {return CombatState;}
@@ -567,5 +623,24 @@ public:
 	FORCEINLINE USoundCue* GetMeleeImpactSound() const {return MeleeImpactSound;}
 	
 	FORCEINLINE UParticleSystem* GetBloodParticles() const {return BloodParticles;}
+
+	// 레벨1
+	FORCEINLINE bool GetbKey1() const {return bKey1;}
+	FORCEINLINE void SetbKey1(bool bGetKey) {bKey1 = bGetKey;}
+	FORCEINLINE bool GetbKey2() const {return bKey2;}
+	FORCEINLINE void SetbKey2(bool bGetKey) {bKey1 = bGetKey;}
+	FORCEINLINE bool GetbKey3() const {return bKey3;}
+	FORCEINLINE void SetbKey3(bool bGetKey) {bKey1 = bGetKey;}
+	FORCEINLINE bool GetbKey4() const {return bKey4;}
+	FORCEINLINE void SetbKey4(bool bGetKey) {bKey1 = bGetKey;}
+	
+	FORCEINLINE bool GetbPotalKey1() const {return bPotalKey1;}
+	FORCEINLINE void SetbPotalKey1(bool bGetKey) {bPotalKey1 = bGetKey;}
+
+	FORCEINLINE bool GetbPotalKey2() const {return bPotalKey2;}
+	FORCEINLINE void SetbPotalKey2(bool bGetKey) {bPotalKey2 = bGetKey;}
+
+	FORCEINLINE bool GetbPotalKey3() const {return bPotalKey3;}
+	FORCEINLINE void SetbPotalKey3(bool bGetKey) {bPotalKey3 = bGetKey;}
 
 };

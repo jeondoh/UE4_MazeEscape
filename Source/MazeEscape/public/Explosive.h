@@ -22,9 +22,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	/**************************************************************************************************/
 	/** 인터페이스 Override **/
 	UFUNCTION(BlueprintCallable)

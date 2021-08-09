@@ -26,6 +26,7 @@ AWeapon::AWeapon()
 	bAutomatic = true;
 	Damage = 0;
 	HeadShotDamage = 0;
+	WeaponName = "BaseWeapon";
 }
 
 void AWeapon::BeginPlay()

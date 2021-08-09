@@ -22,11 +22,6 @@ AAmmo::AAmmo()
 	AmmoCollisionSphere->SetSphereRadius(50.f);
 }
 
-void AAmmo::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-
 void AAmmo::BeginPlay()
 {
 	Super::BeginPlay();

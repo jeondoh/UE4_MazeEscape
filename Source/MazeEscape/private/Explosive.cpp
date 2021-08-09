@@ -12,7 +12,7 @@
 AExplosive::AExplosive()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	ExplosvieDamage = 100.f;
 	
@@ -28,13 +28,6 @@ void AExplosive::BeginPlay()
 {
 	Super::BeginPlay();
 	
-}
-
-// Called every frame
-void AExplosive::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 void AExplosive::BulletHit_Implementation(FHitResult HitResult, AActor* Player, AController* InstigatorController)

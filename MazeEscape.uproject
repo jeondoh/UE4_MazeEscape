@@ -10,14 +10,9 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"AIModule"
+				"AIModule",
+				"CoreUObject"
 			]
-		}
-	],
-	"Plugins": [
-		{
-			"Name": "ApexDestruction",
-			"Enabled": true
 		}
 	],
 	"Plugins": [

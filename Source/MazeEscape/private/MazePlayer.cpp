@@ -9,6 +9,8 @@
 #include "Enemy.h"
 #include "EnemyController.h"
 #include "Item.h"
+#include "ItemStorage.h"
+#include "SaveEscapeGame.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -60,7 +62,6 @@ AMazePlayer::AMazePlayer()
 void AMazePlayer::BeginPlay()
 {
 	Super::BeginPlay();
-
 	if(FollowCamera)
 	{
 		CameraDefaultFOV = GetFollowCamera()->FieldOfView;
@@ -70,7 +71,7 @@ void AMazePlayer::BeginPlay()
 	EquipWeapon(SpawnDefaultWeapon());
 	// 인벤토리에 무기 넣기
 	Inventory.Add(EquippedWeapon);
-	EquippedWeapon->SetSlotIndex(0);
+	EquippedWeapon->SetSlotIndex(0);	
 	// 아이템 테두리 GLow 효과
 	EquippedWeapon->DisableCustomDepth();
 	EquippedWeapon->DisableGlowMaterial();
@@ -161,6 +162,11 @@ void AMazePlayer::InitalizedData()
 	EquipSoundResetTime = 0.2f; // 무기 획득 사운드 시간 리셋시간(다른 아이템 픽업 전 대기시간)
 	/* 인벤토리 */
 	HighlightedSlot = -1; // 강조 표시(애니메이션)된 슬롯의 인덱스
+	/* 레벨1 */
+	bKey1 = false;
+	bKey2 = false;
+	bKey3 = false;
+	bKey4 = false;
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -1225,4 +1231,108 @@ float AMazePlayer::RandomizationDamage(float Damage, bool isHeadShot)
 	float Min = isHeadShot ? Damage - 5.f : Damage - 8.f;
 	float Max = isHeadShot ? Damage + 5.f : Damage + 3.f;
 	return FMath::RandRange(Min, Max);
+}
+
+void AMazePlayer::SwitchLevel(FName LevelName)
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		FString CurrentLevel = World->GetMapName();
+		CurrentLevel.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
+
+		FName CurrentLevelName(*CurrentLevel);
+		if (CurrentLevelName != LevelName)
+		{
+			FString Level = LevelName.ToString();
+			UGameplayStatics::OpenLevel(World, LevelName);
+		}
+	}
+}
+
+void AMazePlayer::SaveGame()
+{
+	USaveEscapeGame* GameInstance = Cast<USaveEscapeGame>(UGameplayStatics::CreateSaveGameObject(USaveEscapeGame::StaticClass()));
+	FString MapName = GetWorld()->GetMapName();
+	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
+	
+	GameInstance->MazePlayerData.Health = Health;
+	GameInstance->MazePlayerData.MaxHealth = MaxHealth;
+	GameInstance->MazePlayerData.LevelName = MapName;
+	if(EquippedWeapon)
+	{
+		GameInstance->MazePlayerData.WeaponName = EquippedWeapon->GetWeaponName();
+	}
+	UGameplayStatics::SaveGameToSlot(GameInstance, GameInstance->PlayerName, GameInstance->UserIndex);
+}
+
+void AMazePlayer::LoadGame()
+{
+	USaveEscapeGame* GameInstance = Cast<USaveEscapeGame>(UGameplayStatics::CreateSaveGameObject(USaveEscapeGame::StaticClass()));
+	USaveEscapeGame* LoadGameInstance = Cast<USaveEscapeGame>(UGameplayStatics::LoadGameFromSlot(GameInstance->PlayerName, GameInstance->UserIndex));
+
+	if(LoadGameInstance)
+	{
+		if (LoadGameInstance->MazePlayerData.LevelName != "")
+		{
+			FName Map(*LoadGameInstance->MazePlayerData.LevelName);
+			// SwitchLevel(Map);
+		}
+		Health = LoadGameInstance->MazePlayerData.Health;
+		MaxHealth = LoadGameInstance->MazePlayerData.MaxHealth;
+
+		if (WeaponStorge)
+		{
+			AItemStorage* Container = GetWorld()->SpawnActor<AItemStorage>(WeaponStorge);
+			if (Container)
+			{
+				FString WeaponName = GameInstance->MazePlayerData.WeaponName;
+				if (Container->WeaponMap.Num() > 0)
+				{
+					if (Container->WeaponMap.Contains(WeaponName))
+					{
+						AWeapon* Weapon = GetWorld()->SpawnActor<AWeapon>(Container->WeaponMap[WeaponName]);
+						if (Weapon)
+						{
+							Inventory.Add(EquippedWeapon);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void AMazePlayer::DeleteGame()
+{
+	USaveEscapeGame* GameInstance = Cast<USaveEscapeGame>(UGameplayStatics::CreateSaveGameObject(USaveEscapeGame::StaticClass()));
+	UGameplayStatics::DeleteGameInSlot(GameInstance->PlayerName, GameInstance->UserIndex);	
+	
+}
+
+void AMazePlayer::OpenLevel(FName LevelName)
+{
+	UWorld* World = GetWorld();
+	UGameplayStatics::OpenLevel(World, LevelName);
+}
+
+bool AMazePlayer::KeyDoorOpen(FString KeyName, bool bkey)
+{
+	if(KeyName == "DoorKey_Gold" && bkey)
+	{
+		return true;
+	}
+	if(KeyName == "DoorKey_Blue" && bkey)
+	{
+		return true;
+	}
+	if(KeyName == "DoorKey_Green" && bkey)
+	{
+		return true;
+	}
+	if(KeyName == "DoorKey_Red" && bkey)
+	{
+		return true;
+	}
+	return false;
 }

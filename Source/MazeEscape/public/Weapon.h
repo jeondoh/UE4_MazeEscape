@@ -152,6 +152,10 @@ private:
 	FName ClipBoneName;
 	/**************************************************************************************************/
 	/* 무기 */
+
+	// 무기이름
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Properties", meta=(AllowPrivateAccess=true))
+	FString WeaponName;
 	
 	// 무기 타입(ENUM)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|Ammo", meta=(AllowPrivateAccess=true))
@@ -254,6 +258,8 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EAmmoType GetAmmoType() const {return AmmoType;}
 
+	FORCEINLINE FString GetWeaponName() const {return WeaponName;}
+	
 	FORCEINLINE FName GetReloadMontageSection() const {return ReloadMontageSection;}
 	FORCEINLINE void SetReloadMontageSection(FName Name) {ReloadMontageSection = Name;}
 	
