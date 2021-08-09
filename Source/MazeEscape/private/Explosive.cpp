@@ -3,6 +3,7 @@
 
 #include "Explosive.h"
 
+#include "Enemy.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -48,7 +49,11 @@ void AExplosive::BulletHit_Implementation(FHitResult HitResult, AActor* Player, 
 	GetOverlappingActors(OverlappingActors, ACharacter::StaticClass());
 	for(auto Actor : OverlappingActors)
 	{
-		UGameplayStatics::ApplyDamage(Actor, ExplosvieDamage, InstigatorController, Player, UDamageType::StaticClass());
+		AEnemy* Enemy = Cast<AEnemy>(Actor);
+		if(Enemy)
+		{
+			UGameplayStatics::ApplyDamage(Actor, ExplosvieDamage, InstigatorController, Player, UDamageType::StaticClass());			
+		}
 	}
 
 	// 폭발 후 해당 엑터 삭제
