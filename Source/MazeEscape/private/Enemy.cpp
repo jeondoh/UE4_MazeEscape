@@ -499,3 +499,12 @@ void AEnemy::DropItem()
 		}
 	}
 }
+
+FRotator AEnemy::GetLookAtRotationYaw(FVector ActorLocation)
+{
+	FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ActorLocation);
+	FRotator LookAtRotationYaw(0.f, LookAtRotation.Yaw, 0.f);
+	// Target 방향으로 스무스하게 바라봄
+	return FMath::RInterpTo(GetActorRotation(), LookAtRotationYaw, GetWorld()->GetDeltaSeconds(), 200.f);
+}
+
