@@ -65,6 +65,9 @@ public:
 	UFUNCTION()
 	void DestoryEnemy();
 
+	UFUNCTION(BlueprintCallable)
+	FRotator GetLookAtRotationYaw(FVector ActorLocation);
+
 private:
 	// 변수 초기화
 	void InitalizedData();
