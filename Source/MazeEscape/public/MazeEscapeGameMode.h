@@ -23,6 +23,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Widgets", meta=(AllowPrivateAccess=true))
 	UUserWidget* HUDOverlay;
+
+	UPROPERTY()
+	class UUserWidget* GameOverUI;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Widgets", meta = (AllowPrivateAccess = true))
+	TSubclassOf<class UUserWidget> GameOverUIFactory;
 };
 
 
