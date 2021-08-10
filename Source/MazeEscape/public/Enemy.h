@@ -147,11 +147,12 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Animate", meta=(AllowPrivateAccess=true))
 	UAnimMontage* AttackMontage;
 	// 공격 몽타주 이름
-	FName AttackStrike;
 	FName AttackLFast;
 	FName AttackRFast;
+	FName AttackCFast;
 	FName AttackL;
 	FName AttackR;
+	FName AttackRMB;
 
 	UFUNCTION(BlueprintCallable)
 	void PlayAttackMontage(FName Section, float PlayRate);

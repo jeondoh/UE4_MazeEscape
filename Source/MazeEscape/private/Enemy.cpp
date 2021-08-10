@@ -101,9 +101,10 @@ void AEnemy::InitalizedData()
 	HitNumberDestroyTime = 1.5f;
 	bStunned = false;
 	StunChance = 0.5f;
-	AttackStrike = TEXT("AttackStrike");
+	AttackRMB = TEXT("AttackRMB");
 	AttackLFast = TEXT("AttackLFast");
 	AttackRFast = TEXT("AttackRFast");
+	AttackCFast = TEXT("AttackCFast");
 	AttackL = TEXT("AttackL");
 	AttackR = TEXT("AttackR");
 	LeftWeaponSocket = TEXT("FX_Trail_L_01");
@@ -299,7 +300,7 @@ FName AEnemy::GetAttackSectionName()
 FName AEnemy::GetBossAttackSectionName()
 {
 	FName SectionName;
-	const int32 Section{FMath::RandRange(1, 3)};
+	const int32 Section{FMath::RandRange(1, 6)};
 	switch(Section)
 	{
 	case 1:
@@ -307,6 +308,18 @@ FName AEnemy::GetBossAttackSectionName()
 		break;
 	case 2:
 		SectionName = AttackRFast;
+		break;
+	case 3:
+		SectionName = AttackCFast;
+		break;
+	case 4:
+		SectionName = AttackRMB;
+		break;
+	case 5:
+		SectionName = AttackR;
+		break;
+	case 6:
+		SectionName = AttackRMB;
 		break;
 	}
 	return SectionName;
@@ -425,7 +438,6 @@ void AEnemy::SpawnBlood(AMazePlayer* Player, FName SocketName)
 void AEnemy::CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("CombatRangeOverlap:::::::::Start"));
 	if(OtherActor == nullptr) return;
 	auto Player = Cast<AMazePlayer>(OtherActor);
 	if(Player)
@@ -433,17 +445,14 @@ void AEnemy::CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		bInAttackRange = true;
 		if(EnemyController)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("CombatRangeOverlap:::::::::EnemyController"));
 			EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("InAttackRange"), true);
 		}		
 	}
-	UE_LOG(LogTemp, Warning, TEXT("CombatRangeOverlap:::::::::End"));
 }
 
 void AEnemy::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	UE_LOG(LogTemp, Warning, TEXT("CombatRangeEndOverlap:::::::::Start"));
 	if(OtherActor == nullptr) return;
 	auto Player = Cast<AMazePlayer>(OtherActor);
 	if(Player)
@@ -451,11 +460,9 @@ void AEnemy::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 		bInAttackRange = false;
 		if(EnemyController)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("CombatRangeOverlap:::::::::EnemyController"));
 			EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("InAttackRange"), false);
 		}
 	}
-	UE_LOG(LogTemp, Warning, TEXT("CombatRangeEndOverlap:::::::::End"));
 }
 
 void AEnemy::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
