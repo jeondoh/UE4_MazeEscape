@@ -104,6 +104,9 @@ private:
 	// 죽음여부
 	UPROPERTY(VisibleAnywhere, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	bool bDying;
+	// 보스몬스터 여부
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
+	bool isBoss;
 	// 죽은이후 일정 시간 이후 destory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|State", meta=(AllowPrivateAccess=true))
 	float DeathTime;
@@ -144,6 +147,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Enemy|Animate", meta=(AllowPrivateAccess=true))
 	UAnimMontage* AttackMontage;
 	// 공격 몽타주 이름
+	FName AttackStrike;
 	FName AttackLFast;
 	FName AttackRFast;
 	FName AttackL;
@@ -153,7 +157,13 @@ private:
 	void PlayAttackMontage(FName Section, float PlayRate);
 
 	UFUNCTION(BlueprintPure)
+	FName GetSectionName();
+
+	UFUNCTION()
 	FName GetAttackSectionName();
+
+	UFUNCTION()
+	FName GetBossAttackSectionName();
 
 	UFUNCTION(BlueprintCallable)
 	void FinishDeath();

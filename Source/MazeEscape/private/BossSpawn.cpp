@@ -18,18 +18,12 @@ void ABossSpawn::BeginPlay()
 	
 }
 
-void ABossSpawn::SpawnBossEnemy(bool bSpawn)
+void ABossSpawn::SpawnBossEnemy()
 {
-	if(bSpawn)
-	{
-		FActorSpawnParameters Param;
-		Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	FActorSpawnParameters Param;
+	Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		GetWorld()->SpawnActor<AEnemy>(BossSpawnClass,
-			GetActorLocation(),
-			GetActorRotation(), Param);	
-	}
+	GetWorld()->SpawnActor<AEnemy>(BossSpawnClass,
+		GetActorLocation(),
+		GetActorRotation(), Param);	
 }
-
-
-

@@ -98,7 +98,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SwitchLevel(FName LevelName);
-	
+
+	/**************************************************************************************************/
+	/** 개발전용 - 회복자동 **/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Develop")
+	bool isDevelop;
+
+	/**************************************************************************************************/
 private:
 
 	// 변수 초기화

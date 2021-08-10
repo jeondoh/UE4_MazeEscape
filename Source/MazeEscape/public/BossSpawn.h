@@ -25,6 +25,6 @@ private:
 	TSubclassOf<class AEnemy> BossSpawnClass;
 
 	UFUNCTION(BlueprintCallable)
-	void SpawnBossEnemy(bool bSpawn);
+	void SpawnBossEnemy();
 	
 };

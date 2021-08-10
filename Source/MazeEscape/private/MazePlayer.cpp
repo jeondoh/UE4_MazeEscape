@@ -167,6 +167,8 @@ void AMazePlayer::InitalizedData()
 	bKey2 = false;
 	bKey3 = false;
 	bKey4 = false;
+	/* 개발전용 */
+	isDevelop = false;
 }
 
 void AMazePlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
