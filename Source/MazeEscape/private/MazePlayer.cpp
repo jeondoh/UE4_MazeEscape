@@ -167,6 +167,9 @@ void AMazePlayer::InitalizedData()
 	bKey2 = false;
 	bKey3 = false;
 	bKey4 = false;
+	/* 보스 */
+	BossHealth = 0.f;
+	BossMaxHealth = 0.f; 
 	/* 개발전용 */
 	isDevelop = false;
 }

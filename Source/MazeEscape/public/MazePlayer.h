@@ -99,6 +99,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SwitchLevel(FName LevelName);
 
+/**************************************************************************************************/
+	/** 보스 **/
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Boss|Health")
+	float BossHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Boss|Health")
+	float BossMaxHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Boss|Health")
+	bool isBossHealthVisible;
+
 	/**************************************************************************************************/
 	/** 개발전용 - 회복자동 **/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Develop")
