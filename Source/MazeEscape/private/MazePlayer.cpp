@@ -218,6 +218,7 @@ float AMazePlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 void AMazePlayer::Die()
 {
 	bDead = true;
+	GetCharacterMovement()->MaxWalkSpeed = 0.f;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if(AnimInstance && DeathMontage)
 	{
@@ -245,6 +246,7 @@ void AMazePlayer::StillAiming()
 
 void AMazePlayer::GetPickupItem(AItem* Item)
 {
+	if(bDead) return;
 	// 무기 장착 소리
 	if(Item)
 	{
