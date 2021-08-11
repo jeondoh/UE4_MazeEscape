@@ -27,6 +27,9 @@ struct FMazePlayerData
 	// 레벨명
 	UPROPERTY(VisibleAnywhere, Category="SaveGame|Data")
 	FString LevelName;
+	// 클리어 레벨명
+	UPROPERTY(VisibleAnywhere, Category="SaveGame|Data")
+	FString ClearGameLevel;
 };
 
 
@@ -49,4 +52,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category="SaveGame")
 	FMazePlayerData MazePlayerData;
+
+	UPROPERTY(VisibleAnywhere, Category="SaveGame")
+	FName ClearGameLevel;
 };

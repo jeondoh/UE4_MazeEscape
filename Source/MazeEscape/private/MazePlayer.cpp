@@ -1286,9 +1286,9 @@ void AMazePlayer::SaveGame()
 	FString MapName = GetWorld()->GetMapName();
 	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
 	
-	GameInstance->MazePlayerData.Health = Health;
-	GameInstance->MazePlayerData.MaxHealth = MaxHealth;
-	GameInstance->MazePlayerData.LevelName = MapName;
+	// GameInstance->MazePlayerData.Health = Health;
+	// GameInstance->MazePlayerData.MaxHealth = MaxHealth;
+	GameInstance->MazePlayerData.ClearGameLevel = MapName;
 	if(EquippedWeapon)
 	{
 		GameInstance->MazePlayerData.WeaponName = EquippedWeapon->GetWeaponName();
@@ -1303,14 +1303,16 @@ void AMazePlayer::LoadGame()
 
 	if(LoadGameInstance)
 	{
+		/*
 		if (LoadGameInstance->MazePlayerData.LevelName != "")
 		{
 			FName Map(*LoadGameInstance->MazePlayerData.LevelName);
 			// SwitchLevel(Map);
 		}
-		Health = LoadGameInstance->MazePlayerData.Health;
-		MaxHealth = LoadGameInstance->MazePlayerData.MaxHealth;
-
+		*/
+		// Health = LoadGameInstance->MazePlayerData.Health;
+		// MaxHealth = LoadGameInstance->MazePlayerData.MaxHealth;
+		/*
 		if (WeaponStorge)
 		{
 			AItemStorage* Container = GetWorld()->SpawnActor<AItemStorage>(WeaponStorge);
@@ -1330,6 +1332,7 @@ void AMazePlayer::LoadGame()
 				}
 			}
 		}
+		*/
 	}
 }
 
