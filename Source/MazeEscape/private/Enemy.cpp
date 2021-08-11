@@ -146,6 +146,12 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	
 	Health -= DamageAmount;
 
+	if(isBoss && Health <= 850.f)
+	{
+		IsDead = true;
+		Health = 0.f;
+		Die();
+	}
 	if(Health <= 0.f)
 	{
 		IsDead = true;

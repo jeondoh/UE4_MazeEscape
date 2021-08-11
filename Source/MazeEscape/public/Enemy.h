@@ -54,6 +54,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent)
 	void ShowHealthBar();
+	UFUNCTION()
 	void ShowHealthBar_Implementation();
 	
 	UFUNCTION(BlueprintImplementableEvent)

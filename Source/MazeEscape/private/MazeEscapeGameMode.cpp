@@ -27,6 +27,15 @@ void AMazeEscapeGameMode::BeginPlay()
 			HUDOverlay->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
+
+	if(GameOverUIFactory)
+	{
+		GameOverUI = CreateWidget<UUserWidget>(GetWorld(), GameOverUIFactory);
+		if(GameOverUI)
+		{
+			GameOverUI->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
 }
 
 

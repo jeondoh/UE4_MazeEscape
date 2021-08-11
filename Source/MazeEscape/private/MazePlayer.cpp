@@ -10,6 +10,7 @@
 #include "EnemyController.h"
 #include "Item.h"
 #include "ItemStorage.h"
+#include "MazeEscapeGameMode.h"
 #include "SaveEscapeGame.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Camera/CameraComponent.h"
@@ -220,9 +221,29 @@ float AMazePlayer::TakeDamage(float DamageAmount, FDamageEvent const& DamageEven
 	return DamageAmount;
 }
 
+void AMazePlayer::GetGameOverUI()
+{
+	AMazeEscapeGameMode* GameMode = Cast<AMazeEscapeGameMode>(GetWorld()->GetAuthGameMode());
+	if(GameMode)
+	{
+		// UGameplayStatics::SetGamePaused(GetWorld(), true);
+		// 마우스커서를 보이게
+		GetWorld()->GetFirstPlayerController()->bShowMouseCursor = true;
+		// GameOver
+		GameMode->GetGameOverUI()->AddToViewport();
+		GameMode->GetGameOverUI()->SetVisibility(ESlateVisibility::Visible);
+	}
+}
+
 void AMazePlayer::Die()
 {
 	bDead = true;
+	CombatState = ECombatState::ECS_Die;
+	APlayerController* APC = UGameplayStatics::GetPlayerController(this, 0);
+	if(APC)
+	{
+		DisableInput(APC);
+	}
 	GetCharacterMovement()->MaxWalkSpeed = 0.f;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if(AnimInstance && DeathMontage)
@@ -234,11 +255,8 @@ void AMazePlayer::Die()
 void AMazePlayer::FinishDeath()
 {
 	GetMesh()->bPauseAnims = true;
-	APlayerController* APC = UGameplayStatics::GetPlayerController(this, 0);
-	if(APC)
-	{
-		DisableInput(APC);
-	}
+	// 게임오버 UI
+	GetGameOverUI();
 }
 
 void AMazePlayer::StillAiming()
@@ -1050,6 +1068,11 @@ void AMazePlayer::Stun()
 void AMazePlayer::EndStun()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	if(EquippedWeapon && EquippedWeapon->GetAmmo() == 0)
+	{
+		ReloadWeapon();
+		return;
+	}
 	if(bAimingBUttonPressed)
 	{
 		Aim();
@@ -1256,7 +1279,7 @@ void AMazePlayer::SwitchLevel(FName LevelName)
 		}
 	}
 }
-
+// 미완
 void AMazePlayer::SaveGame()
 {
 	USaveEscapeGame* GameInstance = Cast<USaveEscapeGame>(UGameplayStatics::CreateSaveGameObject(USaveEscapeGame::StaticClass()));
@@ -1272,7 +1295,7 @@ void AMazePlayer::SaveGame()
 	}
 	UGameplayStatics::SaveGameToSlot(GameInstance, GameInstance->PlayerName, GameInstance->UserIndex);
 }
-
+// 미완
 void AMazePlayer::LoadGame()
 {
 	USaveEscapeGame* GameInstance = Cast<USaveEscapeGame>(UGameplayStatics::CreateSaveGameObject(USaveEscapeGame::StaticClass()));

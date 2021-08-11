@@ -24,11 +24,15 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Widgets", meta=(AllowPrivateAccess=true))
 	UUserWidget* HUDOverlay;
 
-	UPROPERTY()
-	class UUserWidget* GameOverUI;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Widgets", meta = (AllowPrivateAccess = true))
 	TSubclassOf<class UUserWidget> GameOverUIFactory;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Widgets", meta = (AllowPrivateAccess = true))
+	class UUserWidget* GameOverUI;
+
+public:
+	FORCEINLINE UUserWidget* GetGameOverUI() const {return GameOverUI;} 
+
 };
 
 

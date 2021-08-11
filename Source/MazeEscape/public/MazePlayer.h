@@ -17,6 +17,7 @@ enum class ECombatState : uint8
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
 	ECS_Equipping UMETA(DisplayName = "Equipping"),
 	ECS_Stunned UMETA(DisplayName = "Stunned"),
+	ECS_Die UMETA(DisplayName = "Die"),
 
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
@@ -53,6 +54,8 @@ protected:
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 		AController* EventInstigator, AActor* DamageCauser) override;
 
+	void GetGameOverUI();
+	
 // 함수선언
 public:	
 	// Called every frame
@@ -102,10 +105,10 @@ public:
 /**************************************************************************************************/
 	/** 보스 **/
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Boss|Health")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Boss|Health")
 	float BossHealth;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Boss|Health")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Boss|Health")
 	float BossMaxHealth;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Boss|Health")
@@ -401,7 +404,7 @@ private:
 	/** 무기 **/
 
 	// 블루프린트에서 기본 무기 지정
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Combat", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Combat", meta=(AllowPrivateAccess=true))
 	TSubclassOf<AWeapon> DefaultWeaponClass;
 	
 	// 장착된 무기

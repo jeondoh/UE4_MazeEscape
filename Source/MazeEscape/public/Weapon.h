@@ -248,8 +248,6 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon|State", meta=(AllowPrivateAccess=true))
 	// 헤드샷 피해량
 	float HeadShotDamage;
-
-	/**************************************************************************************************/
 	
 // Getter & Setter	
 public:
