@@ -13,7 +13,7 @@ Play 영상
   - 전투위주, 사막안의 탈출구를 찾아 탈출
 
 • Area03(연구실) https://youtu.be/8aVMrSgGfVw
-  - 미로같은 연구실 내에 탈출구를 찾아 
+  - 미로같은 연구실 내에 탈출구를 찾아 탈출
 
 • Boss Stage(숲) https://youtu.be/ChIFoZR9l_8
   - 각 Area에서 숙달된 전투를 바탕으로 숲 중앙의 보스를 처치하여 최종적으로 탈출
